@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">JPG to PDF</h1>
+        <p class="page-subtitle">Convert JPG/PNG images to a PDF document</p>
+        
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="jpgForm">
+                {% csrf_token %}
+                <div class="upload-area" id="dropZone">
+                    <input type="file" name="files" id="fileInput" multiple accept=".jpg,.jpeg,.png" class="file-input" style="display:none">
+                    <div class="upload-content">
+                        <span class="upload-icon">🖼️</span>
+                        <h3>Drop your images here</h3>
+                        <p>or <a href="#" onclick="document.getElementById('fileInput').click(); return false;">choose files</a></p>
+                        <p class="upload-hint">JPG, JPEG, PNG supported</p>
+                    </div>
+                </div>
+                <div id="fileList" class="file-list"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Convert to PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

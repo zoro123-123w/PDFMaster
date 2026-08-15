@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Simple, Transparent Pricing</h1>
+        <p class="page-subtitle">Choose the plan that's right for you</p>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h2>Free</h2>
+                <div class="price">$0<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Basic PDF tools</li>
+                    <li>25 MB file limit</li>
+                    <li>Standard processing</li>
+                    <li>Email support</li>
+                </ul>
+                <a href="{% url 'tools_list' %}" class="btn btn-primary btn-block">Get Started</a>
+            </div>
+            <div class="pricing-card popular">
+                <div class="popular-badge">Most Popular</div>
+                <h2>Pro</h2>
+                <div class="price">$9.99<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Larger files</li>
+                    <li>Advanced conversions</li>
+                    <li>OCR</li>
+                    <li>AI tools</li>
+                    <li>Batch processing</li>
+                    <li>No ads</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="#" class="btn btn-primary btn-block">Coming Soon</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

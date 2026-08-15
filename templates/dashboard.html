@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Dashboard</h1>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <h3>Files Processed</h3>
+                <p class="stat-number">{{ jobs.count }}</p>
+            </div>
+        </div>
+        <h2>Recent Jobs</h2>
+        {% if jobs %}
+        <div class="table-responsive">
+            <table class="jobs-table">
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>File</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>{{ job.get_tool_name_display }}</td>
+                        <td>{{ job.original_filename }}</td>
+                        <td><span class="status status-{{ job.status|lower }}">{{ job.status }}</span></td>
+                        <td>{{ job.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="no-jobs">No jobs yet. <a href="{% url 'tools_list' %}">Start processing files</a></p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

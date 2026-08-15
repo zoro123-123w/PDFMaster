@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+    <div class="container" style="text-align: center; padding: 4rem 1rem;">
+        <h1 style="font-size: 6rem; margin-bottom: 1rem;">500</h1>
+        <h2>Server Error</h2>
+        <p>Something went wrong on our end. Please try again later.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary btn-large">Go Home</a>
+    </div>
+</section>
+{% endblock %}

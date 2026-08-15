@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Split PDF</h1>
+        <p class="page-subtitle">Extract pages or ranges from a PDF</p>
+        
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="splitForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">📄</span>
+                            <h3>Drop your PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_pages">Page Ranges</label>
+                    {{ range_form.pages }}
+                    <p class="form-hint">Example: 1-3, 5, 7-10</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Split PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

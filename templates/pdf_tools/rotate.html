@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Rotate PDF</h1>
+        <p class="page-subtitle">Rotate PDF pages by 90, 180, or 270 degrees</p>
+        
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="rotateForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">🔄</span>
+                            <h3>Drop your PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_angle">Rotation Angle</label>
+                    {{ rotation_form.angle }}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Rotate PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Compress PDF</h1>
+        <p class="page-subtitle">Reduce PDF file size while preserving quality</p>
+        
+        <div class="tool-container">
+            {% if not original_size %}
+            <form method="post" enctype="multipart/form-data" id="compressForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">🗜️</span>
+                            <h3>Drop your PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Compress PDF</button>
+                </div>
+            </form>
+            {% else %}
+            <div class="result-box">
+                <h2>Compression Complete</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Original Size</span>
+                        <span class="stat-value">{{ original_size|filesizeformat }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Compressed Size</span>
+                        <span class="stat-value">{{ compressed_size|filesizeformat }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Reduction</span>
+                        <span class="stat-value">{{ ratio|floatformat:1 }}%</span>
+                    </div>
+                </div>
+                <a href="{% url 'download_file' job_id %}" class="btn btn-primary btn-large">Download Compressed PDF</a>
+                <a href="{% url 'compress_pdf' %}" class="btn btn-secondary">Compress Another</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}PDFMaster - All Your PDF Tools in One Place{% endblock %}
+{% block meta_description %}Merge, split, compress, convert and manage your PDFs quickly and easily with PDFMaster.{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h1>All Your PDF Tools in One Place</h1>
+        <p class="hero-subtitle">Merge, split, compress, convert and manage your PDFs quickly and easily.</p>
+        <div class="hero-buttons">
+            <a href="{% url 'tools_list' %}" class="btn btn-primary btn-large">Explore PDF Tools</a>
+            <a href="{% url 'register' %}" class="btn btn-secondary btn-large">Get Started Free</a>
+        </div>
+    </div>
+</section>
+
+<section class="upload-section">
+    <div class="container">
+        <div class="upload-area" id="heroUpload">
+            <div class="upload-content">
+                <span class="upload-icon">📤</span>
+                <h3>Drop your PDF here</h3>
+                <p>or <a href="{% url 'tools_list' %}">choose a tool</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Popular PDF Tools</h2>
+        <div class="tools-grid">
+            {% for tool in tools %}
+            <div class="tool-card">
+                <div class="tool-icon">{{ tool.icon }}</div>
+                <h3>{{ tool.name }}</h3>
+                <p>{{ tool.description }}</p>
+                <span class="badge">Free</span>
+                <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Upload</h3>
+                <p>Drag and drop your PDF or image files</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Process</h3>
+                <p>Our tools process your files instantly</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Download</h3>
+                <p>Download your processed files</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Why PDFMaster</h2>
+        <div class="features-grid">
+            <div class="feature">
+                <span class="feature-icon">🔒</span>
+                <h3>Secure</h3>
+                <p>Files are processed securely and deleted after processing</p>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">⚡</span>
+                <h3>Fast</h3>
+                <p>Instant processing with no waiting</p>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">💯</span>
+                <h3>Free</h3>
+                <p>All tools are completely free to use</p>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <h3>Mobile Friendly</h3>
+                <p>Works on all devices</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section cta-section">
+    <div class="container">
+        <h2>Ready to Get Started?</h2>
+        <p>Join thousands of users who trust PDFMaster for their PDF needs.</p>
+        <a href="{% url 'tools_list' %}" class="btn btn-primary btn-large">Start Using PDFMaster</a>
+    </div>
+</section>
+{% endblock %}
