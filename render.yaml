@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: pdfmaster
+    runtime: python
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: AI_API_KEY
+        value: ""
+      - key: AI_PROVIDER
+        value: ""
+      - key: AI_DEFAULT_MODEL
+        value: ""
+      - key: TESSERACT_CMD
+        value: "/usr/bin/tesseract"
+    plan: free

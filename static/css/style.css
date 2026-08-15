@@ -711,3 +711,188 @@ body {
         font-size: 0.95rem;
     }
 }
+
+/* ===== Theme toggle & smooth transitions ===== */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.4rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    border-radius: var(--radius);
+    transition: color 0.2s;
+}
+.theme-toggle:hover {
+    color: var(--primary);
+}
+body,
+.navbar,
+.footer,
+.tool-card,
+.tool-container,
+.result-box,
+.pricing-card,
+.stat-card,
+.section-alt,
+.upload-area,
+.faq-item,
+.jobs-table,
+.file-item,
+.form-input,
+.form-select {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ===== Dark theme ===== */
+[data-theme="dark"] {
+    --bg: #0f172a;
+    --text: #e2e8f0;
+    --text-light: #94a3b8;
+    --border: #334159;
+    --white: #1e293b;
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+[data-theme="dark"] body {
+    background: var(--bg);
+    color: var(--text);
+}
+[data-theme="dark"] .upload-area:hover,
+[data-theme="dark"] .upload-area.dragover {
+    background: rgba(16, 185, 129, 0.12);
+}
+[data-theme="dark"] .footer {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+[data-theme="dark"] .footer a {
+    color: #cbd5e1;
+}
+[data-theme="dark"] .footer-links a:hover {
+    color: #f1f5f9;
+}
+[data-theme="dark"] .footer-bottom {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .message-error {
+    background: #7f1d1d;
+    color: #fee2e2;
+}
+[data-theme="dark"] .message-success {
+    background: #065f46;
+    color: #d1fae5;
+}
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] textarea.form-input {
+    background: var(--white);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+/* Elements that reuse --white as a text/icon color must stay white in dark mode */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .cta-section,
+[data-theme="dark"] .popular-badge,
+[data-theme="dark"] .badge,
+[data-theme="dark"] .file-item-remove,
+[data-theme="dark"] .step-number {
+    color: #ffffff;
+}
+[data-theme="dark"] .btn-outline {
+    color: var(--text);
+    border-color: var(--border);
+}
+.ai-response {
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-align: left;
+    padding: 1.5rem;
+    background: var(--bg);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ===== Mobile menu ===== */
+@media (max-width: 768px) {
+    .navbar .container {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .navbar .container.nav-open .nav-links {
+        display: flex !important;
+        flex-direction: column;
+        width: 100%;
+        margin-top: 1rem;
+        gap: 1rem;
+    }
+
+    .navbar .container.nav-open .nav-auth {
+        display: flex !important;
+        flex-wrap: wrap;
+    }
+}
+
+/* ===== Tool categories ===== */
+.tool-category {
+    margin-bottom: 3rem;
+}
+
+.category-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.category-description {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.category-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.category-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.category-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.action-selector {
+    margin-top: 1.5rem;
+}
+
+.action-selector label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}

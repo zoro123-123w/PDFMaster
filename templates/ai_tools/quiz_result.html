@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ tool_label }} Result - PDFMaster{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ tool_label }} Result</h1>
+        <p class="page-subtitle">Request created {{ job.created_at|date:"M d, Y H:i" }}</p>
+
+        <div class="tool-container">
+            {% if quiz_data.questions %}
+            <div class="quiz-container">
+                <h2>Quiz: {{ quiz_data.questions|length }} Questions</h2>
+                <form id="quizForm">
+                    {% for q in quiz_data.questions %}
+                    <div class="quiz-question" id="q{{ forloop.counter }}">
+                        <div class="question-header">
+                            <span class="question-number">Question {{ forloop.counter }}</span>
+                            <span class="difficulty-badge">{{ q.difficulty|default:"Medium" }}</span>
+                        </div>
+                        <p class="question-text">{{ q.question }}</p>
+                        <div class="options">
+                            {% for opt in q.options %}
+                            <label class="option">
+                                <input type="radio" name="q{{ forloop.counter }}" value="{{ opt }}">
+                                <span class="option-text">{{ opt }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <div class="answer-reveal" id="answer{{ forloop.counter }}" style="display:none;">
+                            <strong>Correct Answer:</strong> {{ q.answer }}
+                            {% if q.explanation %}<br><strong>Explanation:</strong> {{ q.explanation }}{% endif %}
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAnswer({{ forloop.counter }})">Show Answer</button>
+                    </div>
+                    {% endfor %}
+                </form>
+                <div class="quiz-footer">
+                    <button type="button" class="btn btn-primary" onclick="showReviewMode()">Submit &amp; Review Answers</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="result-box">
+                <p>No quiz questions could be generated. The PDF may contain no extractable text.</p>
+                {% if quiz_data.raw %}<div class="ai-response">{{ quiz_data.raw|linebreaks }}</div>{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <a href="{% url 'download_ai_result' job.id %}" class="btn btn-primary btn-large">Download Result (JSON)</a>
+                <a href="{% url 'ai_study' %}" class="btn btn-secondary">New Quiz</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAnswer(num) {
+    const el = document.getElementById('answer' + num);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function showReviewMode() {
+    const form = document.getElementById('quizForm');
+    if (!form) return;
+    let score = 0;
+    let total = {{ quiz_data.questions|length }};
+    {% for q in quiz_data.questions %}
+    const qdiv = document.getElementById('q{{ forloop.counter }}');
+    const selected = document.querySelector('input[name="q{{ forloop.counter }}"]:checked');
+    if (selected) {
+        const isCorrect = selected.value === '{{ q.answer }}';
+        if (qdiv) qdiv.style.backgroundColor = isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+        if (isCorrect) score++;
+    }
+    document.getElementById('answer{{ forloop.counter }}').style.display = 'block';
+    {% endfor %}
+    let scoreEl = document.createElement('div');
+    scoreEl.className = 'result-box';
+    scoreEl.innerHTML = '<h2>Score: ' + score + ' / ' + total + '</h2>';
+    document.querySelector('.quiz-footer').appendChild(scoreEl);
+}
+</script>
+{% endblock %}
+{% block extra_css %}
+<style>
+.quiz-question { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; background: var(--white); }
+.question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.question-number { font-weight: 600; color: var(--text-light); }
+.difficulty-badge { background: var(--primary); color: var(--white); padding: .25rem .75rem; border-radius: 9999px; font-size: .75rem; }
+.question-text { margin: .5rem 0; font-size: 1.1rem; }
+.options { display: flex; flex-direction: column; gap: .5rem; margin: 1rem 0; }
+.option { display: flex; align-items: center; padding: .5rem; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+.option:hover { background: var(--bg); }
+.option input[type="radio"] { margin-right: .75rem; }
+.answer-reveal { background: var(--bg); padding: 1rem; border-radius: var(--radius); margin: 1rem 0; }
+.btn-sm { padding: .375rem 1rem; font-size: .875rem; }
+</style>
+{% endblock %}

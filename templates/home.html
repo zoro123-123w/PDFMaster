@@ -18,11 +18,73 @@
 <section class="upload-section">
     <div class="container">
         <div class="upload-area" id="heroUpload">
-            <div class="upload-content">
-                <span class="upload-icon">📤</span>
-                <h3>Drop your PDF here</h3>
-                <p>or <a href="{% url 'tools_list' %}">choose a tool</a></p>
+            <form method="post" action="{% url 'tools_list' %}" enctype="multipart/form-data" id="homeUploadForm">
+                {% csrf_token %}
+                <input type="file" name="file" id="homeFileInput" accept=".pdf" style="display:none" onchange="updateHomeFileName(this)">
+                <div class="upload-content" onclick="document.getElementById('homeFileInput').click()">
+                    <span class="upload-icon">📤</span>
+                    <h3>Drop your PDF here</h3>
+                    <p>or click to choose a file</p>
+                    <p id="homeFileName" class="file-name"></p>
+                    <p class="upload-hint">PDF files supported</p>
+                </div>
+            </form>
+            <div class="action-selector" style="margin-top: 1.5rem; display: none;" id="actionSelector">
+                <label for="homeAction">Choose an action:</label>
+                <select id="homeAction" class="form-select" style="max-width: 300px; margin: 0 auto;">
+                    <option value="">Select a tool...</option>
+                    <option value="/tools/merge-pdf/">Merge PDF</option>
+                    <option value="/tools/split-pdf/">Split PDF</option>
+                    <option value="/tools/compress-pdf/">Compress PDF</option>
+                    <option value="/tools/rotate-pdf/">Rotate PDF</option>
+                    <option value="/tools/delete-pages/">Delete Pages</option>
+                    <option value="/tools/extract-pages/">Extract Pages</option>
+                    <option value="/tools/pdf-to-word/">PDF to Word</option>
+                    <option value="/tools/pdf-to-excel/">PDF to Excel</option>
+                    <option value="/tools/pdf-to-png/">PDF to PNG</option>
+                    <option value="/tools/ocr/">OCR PDF</option>
+                    <option value="/tools/repair/">Repair PDF</option>
+                </select>
+                <button type="button" class="btn btn-primary" onclick="goToSelectedTool()" style="margin-top: 1rem;">Go to Tool</button>
             </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">PDF Tool Categories</h2>
+        <div class="categories-grid">
+            <a href="{% url 'tools_list' %}#organize" class="category-card">
+                <div class="category-icon">📂</div>
+                <h3>PDF Organize</h3>
+                <p>Merge, split, delete, extract, and reorder pages</p>
+            </a>
+            <a href="{% url 'tools_list' %}#convert" class="category-card">
+                <div class="category-icon">🔄</div>
+                <h3>PDF Convert</h3>
+                <p>Convert PDFs to Word, Excel, images and vice versa</p>
+            </a>
+            <a href="{% url 'tools_list' %}#edit" class="category-card">
+                <div class="category-icon">✏️</div>
+                <h3>PDF Edit</h3>
+                <p>Crop, watermark, annotate, highlight, and add content</p>
+            </a>
+            <a href="{% url 'tools_list' %}#security" class="category-card">
+                <div class="category-icon">🔒</div>
+                <h3>PDF Security</h3>
+                <p>Protect, unlock, and sign your PDFs</p>
+            </a>
+            <a href="{% url 'tools_list' %}#optimize" class="category-card">
+                <div class="category-icon">🗜️</div>
+                <h3>PDF Optimize</h3>
+                <p>Compress and repair damaged PDFs</p>
+            </a>
+            <a href="{% url 'tools_list' %}#ocr" class="category-card">
+                <div class="category-icon">👁️</div>
+                <h3>PDF OCR</h3>
+                <p>Recognize text in scanned documents</p>
+            </a>
         </div>
     </div>
 </section>
@@ -31,13 +93,42 @@
     <div class="container">
         <h2 class="section-title">Popular PDF Tools</h2>
         <div class="tools-grid">
-            {% for tool in tools %}
+            {% for tool in tools|slice:":8" %}
             <div class="tool-card">
                 <div class="tool-icon">{{ tool.icon }}</div>
                 <h3>{{ tool.name }}</h3>
                 <p>{{ tool.description }}</p>
                 <span class="badge">Free</span>
                 <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">AI Tools</h2>
+        <p class="page-subtitle">Intelligent assistance for your PDF documents</p>
+        <div class="tools-grid">
+            {% for tool in ai_tools %}
+            <div class="tool-card">
+                <div class="tool-icon">{{ tool.icon }}</div>
+                <h3>{{ tool.name }}</h3>
+                <p>{{ tool.description }}</p>
+                <span class="badge">AI</span>
+                <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="tools-grid" style="margin-top: 1.5rem;">
+            {% for tool in ai_study_tools %}
+            <div class="tool-card">
+                <div class="tool-icon">{{ tool.icon }}</div>
+                <h3>{{ tool.name }}</h3>
+                <p>{{ tool.description }}</p>
+                <span class="badge">AI Study</span>
+                <a href="{% url tool.url }}" class="btn btn-primary btn-block">Open Tool</a>
             </div>
             {% endfor %}
         </div>

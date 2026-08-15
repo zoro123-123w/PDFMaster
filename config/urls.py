@@ -18,6 +18,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', core_views.home, name='home'),
     path('tools/', include('pdf_tools.urls')),
+    path('ai-tools/', include('ai_tools.urls')),
     path('pricing/', core_views.pricing, name='pricing'),
     path('faq/', core_views.faq, name='faq'),
     path('login/', core_views.CustomLoginView.as_view(), name='login'),

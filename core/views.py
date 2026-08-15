@@ -3,10 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
+from pdf_tools.views import PDF_TOOLS, PDF_TOOL_CATEGORIES
+from ai_tools.views import AI_TOOLS, AI_STUDY_TOOLS
+from pdf_tools.models import ProcessingJob
+from ai_tools.models import AIRequest
 
 
 def home(request):
-    return render(request, 'home.html')
+    return render(request, 'home.html', {
+        'tools': PDF_TOOLS,
+        'ai_tools': AI_TOOLS,
+        'ai_study_tools': AI_STUDY_TOOLS,
+    })
 
 
 def pricing(request):
@@ -39,4 +47,6 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    jobs = ProcessingJob.objects.filter(user=request.user).order_by('-created_at')[:20]
+    ai_requests = AIRequest.objects.filter(user=request.user).order_by('-created_at')[:20]
+    return render(request, 'dashboard.html', {'jobs': jobs, 'ai_requests': ai_requests})

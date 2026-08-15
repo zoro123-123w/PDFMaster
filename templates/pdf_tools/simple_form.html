@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ tool_name }} - PDFMaster{% endblock %}
+{% block meta_description %}{{ tool_name }} - PDFMaster online tool.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ tool_name }}</h1>
+        <p class="page-subtitle">{{ tool_subtitle|default:"Upload your file and process it instantly." }}</p>
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="toolForm">
+                {% csrf_token %}
+                <div class="upload-area" id="dropZone">
+                    <input type="file" name="{{ file_input_name|default:'file' }}" id="id_file" accept="{{ file_accept|default:'*'" }}" style="display:none" onchange="updateFileName(this)">
+                    <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                        <span class="upload-icon">{{ upload_icon|default:'📤' }}</span>
+                        <h3>{{ drop_text|default:'Drop your file here' }}</h3>
+                        <p>or click to choose a file</p>
+                        <p id="fileName" class="file-name"></p>
+                        <p class="upload-hint">{{ hint_text|default:'Supported files' }}</p>
+                    </div>
+                </div>
+                {% if messages %}
+                {% for message in messages %}
+                    <div class="message message-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">{{ submit_label|default:tool_name }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

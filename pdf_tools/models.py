@@ -21,6 +21,8 @@ class ProcessingJob(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     error_message = models.TextField(blank=True)
     output_file = models.CharField(max_length=500, blank=True)
+    output_filename = models.CharField(max_length=255, blank=True,
+                                       help_text="Friendly filename shown to the user on download")
 
     class Meta:
         ordering = ['-created_at']

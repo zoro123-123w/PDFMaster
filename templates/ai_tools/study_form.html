@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ tool_name }} - PDFMaster{% endblock %}
+{% block meta_description %}{{ tool_name }} - PDFMaster AI study tool.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ tool_name }}</h1>
+        <p class="page-subtitle">Upload your PDF to generate AI-powered study material.</p>
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="studyForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">📄</span>
+                            <h3>Drop your PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                            <p class="upload-hint">PDF files supported</p>
+                        </div>
+                    </div>
+                </div>
+                {% for field in form %}
+                {% if field.name != 'file' and field.name != 'files' %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="form-hint">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="message message-error">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">{{ tool_name }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

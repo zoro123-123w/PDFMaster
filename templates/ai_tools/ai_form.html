@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ tool_name }} - PDFMaster{% endblock %}
+{% block meta_description %}{{ tool_name }} - AI-powered PDF processing at PDFMaster.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ tool_name }}</h1>
+        <p class="page-subtitle">
+            {% if question %}
+                Upload a PDF and enter your question to get an AI-powered answer.
+            {% elif tool_name == 'Summarize PDF' %}
+                Upload a PDF to receive a concise summary of its content.
+            {% else %}
+                Upload a PDF to extract all of its text content.
+            {% endif %}
+        </p>
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="dropZone">
+                    <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                    <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                        <span class="upload-icon">📄</span>
+                        <h3>Drop your PDF here</h3>
+                        <p>or click to choose a file</p>
+                        <p id="fileName" class="file-name"></p>
+                        <p class="upload-hint">PDF files supported</p>
+                    </div>
+                </div>
+                {% if question %}
+                <div class="form-group">
+                    <label for="id_question">Your Question</label>
+                    {{ form.question }}
+                    {% if form.question.errors %}
+                        <div class="message message-error">{{ form.question.errors }}</div>
+                    {% endif %}
+                    <p class="form-hint">Be specific so the tool can find the most relevant information.</p>
+                </div>
+                {% endif %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">
+                        {% if tool_name == 'Summarize PDF' %}Summarize PDF
+                        {% elif tool_name == 'Extract Text' %}Extract Text
+                        {% else %}Get Answer{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

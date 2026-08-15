@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}AI Study Suite - PDFMaster{% endblock %}
+{% block meta_description %}AI-powered study tools: quiz generator, flashcards, study notes, study guide and more.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">AI Study Suite</h1>
+        <p class="page-subtitle">Generate quizzes, flashcards, study notes, and more from your PDF documents using AI.</p>
+        <div class="tools-grid">
+            {% for tool in ai_study_tools %}
+            <div class="tool-card">
+                <div class="tool-icon">{{ tool.icon }}</div>
+                <h3>{{ tool.name }}</h3>
+                <p>{{ tool.description }}</p>
+                <span class="badge">AI Study</span>
+                <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

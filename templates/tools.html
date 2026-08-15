@@ -1,20 +1,51 @@
 {% extends 'base.html' %}
 
+{% block title %}PDF Tools - PDFMaster{% endblock %}
+{% block meta_description %}All PDF tools organized by category: convert, edit, organize, secure, optimize, and OCR.{% endblock %}
+
 {% block content %}
 <section class="section">
     <div class="container">
         <h1 class="page-title">PDF Tools</h1>
         <p class="page-subtitle">Choose a tool to get started</p>
-        <div class="tools-grid">
-            {% for tool in tools %}
-            <div class="tool-card">
-                <div class="tool-icon">{{ tool.icon }}</div>
-                <h3>{{ tool.name }}</h3>
-                <p>{{ tool.description }}</p>
-                <span class="badge">Free</span>
-                <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+
+        {% for category in categories %}
+        <div class="tool-category" id="{{ category.slug }}">
+            <h2 class="category-title">{{ category.name }}</h2>
+            <p class="category-description">{{ category.description }}</p>
+            <div class="tools-grid">
+                {% for tool in category.tools %}
+                <div class="tool-card">
+                    <div class="tool-icon">{{ tool.icon }}</div>
+                    <h3>{{ tool.name }}</h3>
+                    <p>{{ tool.description }}</p>
+                    <span class="badge">Free</span>
+                    <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="ai-tools-cta">
+            <h2>AI-Powered Tools</h2>
+            <p class="page-subtitle">Intelligent assistance for your PDF documents</p>
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-icon">🧠</div>
+                    <h3>AI Tools</h3>
+                    <p>Summarize, extract text, translate, and ask questions about your PDFs.</p>
+                    <span class="badge">AI</span>
+                    <a href="{% url 'ai_tools' %}" class="btn btn-primary btn-block">Open AI Tools</a>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🎓</div>
+                    <h3>AI Study Suite</h3>
+                    <p>Generate quizzes, flashcards, study notes, and more from your PDFs.</p>
+                    <span class="badge">AI Study</span>
+                    <a href="{% url 'ai_study' %}" class="btn btn-primary btn-block">Open AI Study</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>

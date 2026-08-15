@@ -18,6 +18,8 @@
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}">Home</a></li>
                 <li><a href="{% url 'tools_list' %}">PDF Tools</a></li>
+                <li><a href="{% url 'ai_tools' %}">AI Tools</a></li>
+                <li><a href="{% url 'ai_study' %}">AI Study</a></li>
                 <li><a href="{% url 'pricing' %}">Pricing</a></li>
                 <li><a href="{% url 'faq' %}">FAQ</a></li>
             </ul>
@@ -33,6 +35,7 @@
                     <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
                 {% endif %}
             </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
             <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         </div>
     </nav>
@@ -63,6 +66,34 @@
                         <li><a href="{% url 'split_pdf' %}">Split PDF</a></li>
                         <li><a href="{% url 'compress_pdf' %}">Compress PDF</a></li>
                         <li><a href="{% url 'jpg_to_pdf' %}">JPG to PDF</a></li>
+                        <li><a href="{% url 'pdf_to_jpg' %}">PDF to JPG</a></li>
+                        <li><a href="{% url 'rotate_pdf' %}">Rotate PDF</a></li>
+                        <li><a href="{% url 'delete_pages' %}">Delete Pages</a></li>
+                        <li><a href="{% url 'extract_pages' %}">Extract Pages</a></li>
+                        <li><a href="{% url 'pdf_to_word' %}">PDF to Word</a></li>
+                        <li><a href="{% url 'pdf_to_png' %}">PDF to PNG</a></li>
+                        <li><a href="{% url 'protect_pdf' %}">Protect PDF</a></li>
+                        <li><a href="{% url 'ocr_pdf' %}">OCR PDF</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>AI Tools</h4>
+                    <ul>
+                        <li><a href="{% url 'ai_tools' %}">AI Tools</a></li>
+                        <li><a href="{% url 'ai_summarize' %}">Summarize PDF</a></li>
+                        <li><a href="{% url 'ai_extract' %}">Extract Text</a></li>
+                        <li><a href="{% url 'ai_translate' %}">Translate Text</a></li>
+                        <li><a href="{% url 'ai_ask' %}">Ask Question</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>AI Study</h4>
+                    <ul>
+                        <li><a href="{% url 'ai_study' %}">All Study Tools</a></li>
+                        <li><a href="{% url 'ai_study_quiz' %}">Quiz Generator</a></li>
+                        <li><a href="{% url 'ai_study_flashcards' %}">Flashcards</a></li>
+                        <li><a href="{% url 'ai_study_notes' %}">Study Notes</a></li>
+                        <li><a href="{% url 'ai_study_exam' %}">Exam Prep</a></li>
                     </ul>
                 </div>
                 <div class="footer-links">

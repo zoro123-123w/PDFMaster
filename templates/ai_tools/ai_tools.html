@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Tools - PDFMaster{% endblock %}
+{% block meta_description %}AI-powered PDF tools: summarize, extract text, translate and ask questions about your PDFs.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">AI Tools</h1>
+        <p class="page-subtitle">AI-powered assistance for your PDF documents</p>
+        <div class="tools-grid">
+            {% for tool in ai_tools %}
+            <div class="tool-card">
+                <div class="tool-icon">{{ tool.icon }}</div>
+                <h3>{{ tool.name }}</h3>
+                <p>{{ tool.description }}</p>
+                <span class="badge">AI</span>
+                <a href="{% url tool.url %}" class="btn btn-primary btn-block">Open Tool</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

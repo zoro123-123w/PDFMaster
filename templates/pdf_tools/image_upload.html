@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}{{ tool_name }} - PDFMaster{% endblock %}
+{% block meta_description %}{{ tool_name }} - PDFMaster online tool.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">{{ tool_name }}</h1>
+        <p class="page-subtitle">{{ tool_subtitle|default:"Upload your images to convert them to PDF." }}</p>
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="toolForm">
+                {% csrf_token %}
+                <div class="upload-area" id="dropZone">
+                    <input type="file" name="files" id="fileInput" multiple accept="image/*" class="file-input" style="display:none">
+                    <div class="upload-content" onclick="document.getElementById('fileInput').click()">
+                        <span class="upload-icon">{{ upload_icon|default:'🖼️' }}</span>
+                        <h3>{{ drop_text|default:'Drop your images here' }}</h3>
+                        <p>or <a href="#" onclick="document.getElementById('fileInput').click(); return false;">choose files</a></p>
+                        <div id="fileList" class="file-list"></div>
+                        <p class="upload-hint">{{ hint_text|default:'JPG, PNG, WebP supported' }}</p>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">{{ submit_label|default:tool_name }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

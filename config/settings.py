@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'core',
     'pdf_tools',
+    'ai_tools',
 ]
 
 MIDDLEWARE = [
@@ -87,6 +88,16 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AI Integration (optional - for AI-powered PDF features)
+# Configuration is read from environment variables only; API keys are never hardcoded.
+AI_API_KEY = os.getenv('AI_API_KEY', '')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'openai')
+AI_DEFAULT_MODEL = os.getenv('AI_DEFAULT_MODEL', 'gpt-4o-mini')
+AI_BASE_URL = os.getenv('AI_BASE_URL', '')
+
+# OCR (Tesseract) - optional system dependency
+TESSERACT_CMD = os.getenv('TESSERACT_CMD', '')
 
 MAX_UPLOAD_SIZE = int(os.getenv('MAX_UPLOAD_SIZE', 26214400))
 

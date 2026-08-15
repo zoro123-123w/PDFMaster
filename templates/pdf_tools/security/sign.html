@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Sign PDF - PDFMaster{% endblock %}
+{% block meta_description %}Add an e-signature to your PDF with PDFMaster.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Sign PDF</h1>
+        <p class="page-subtitle">Upload your PDF and draw or type your signature.</p>
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="signForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">📄</span>
+                            <h3>Drop your PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Draw your signature</label>
+                    <canvas id="signatureCanvas" width="600" height="150" class="signature-canvas"></canvas>
+                    <div class="signature-actions">
+                        <button type="button" class="btn btn-secondary" onclick="clearSignature()">Clear</button>
+                        <button type="button" class="btn btn-outline" onclick="useTypedSignature()">Use Typed Signature</button>
+                    </div>
+                    <p class="form-hint">Draw with your mouse or finger, or click "Use Typed Signature" to type instead.</p>
+                </div>
+
+                <div id="typedSignature" class="form-group" style="display:none;">
+                    <label for="id_typed_sig">Type your signature</label>
+                    <input type="text" id="id_typed_sig" class="form-input" placeholder="Your signature...">
+                </div>
+
+                {{ config_form.as_p }}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Sign PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let sigCanvas, sigCtx, isDrawing = false;
+
+function initSignatureCanvas() {
+    sigCanvas = document.getElementById('signatureCanvas');
+    if (!sigCanvas) return;
+    sigCtx = sigCanvas.getContext('2d');
+    sigCtx.fillStyle = 'white';
+    sigCtx.fillRect(0, 0, sigCanvas.width, sigCanvas.height);
+    sigCtx.strokeStyle = 'black';
+    sigCtx.lineWidth = 2;
+    sigCtx.lineCap = 'round';
+    sigCanvas.addEventListener('mousedown', startDraw);
+    sigCanvas.addEventListener('mousemove', draw);
+    sigCanvas.addEventListener('mouseup', stopDraw);
+    sigCanvas.addEventListener('mouseout', stopDraw);
+    sigCanvas.addEventListener('touchstart', handleTouchStart);
+    sigCanvas.addEventListener('touchmove', handleTouchDraw);
+    sigCanvas.addEventListener('touchend', stopDraw);
+}
+
+function getPos(canvas, e) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches) {
+        return {x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top};
+    }
+    return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+}
+
+function startDraw(e) {
+    isDrawing = true;
+    draw(e);
+}
+
+function draw(e) {
+    if (!isDrawing || !sigCanvas) return;
+    e.preventDefault();
+    const pos = getPos(sigCanvas, e);
+    sigCtx.lineTo(pos.x, pos.y);
+    sigCtx.stroke();
+    sigCtx.beginPath();
+    sigCtx.moveTo(pos.x, pos.y);
+}
+
+function handleTouchStart(e) {
+    isDrawing = true;
+    handleTouchDraw(e);
+}
+
+function handleTouchDraw(e) {
+    if (!isDrawing || !sigCanvas) return;
+    e.preventDefault();
+    const pos = getPos(sigCanvas, e);
+    sigCtx.lineTo(pos.x, pos.y);
+    sigCtx.stroke();
+    sigCtx.beginPath();
+    sigCtx.moveTo(pos.x, pos.y);
+}
+
+function stopDraw() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    if (sigCtx) {
+        sigCtx.beginPath();
+    }
+}
+
+function clearSignature() {
+    if (!sigCtx) return;
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    sigCtx.fillStyle = 'white';
+    sigCtx.fillRect(0, 0, sigCanvas.width, sigCanvas.height);
+    document.getElementById('id_signature_data').value = '';
+}
+
+function useTypedSignature() {
+    document.getElementById('typedSignature').style.display = 'block';
+}
+
+document.getElementById('id_typed_sig').addEventListener('input', function() {
+    const text = this.value;
+    if (!text) return;
+    clearSignature();
+    sigCtx.font = 'bold 48px cursive';
+    sigCtx.fillStyle = 'black';
+    sigCtx.textAlign = 'center';
+    sigCtx.fillText(text, sigCanvas.width / 2, sigCanvas.height / 2);
+    document.getElementById('id_signature_data').value = sigCanvas.toDataURL('image/png');
+});
+
+document.getElementById('signForm').addEventListener('submit', function(e) {
+    if (!sigCanvas || !sigCtx) return;
+    const imageData = sigCanvas.toDataURL('image/png');
+    document.getElementById('id_signature_data').value = imageData;
+});
+
+document.addEventListener('DOMContentLoaded', initSignatureCanvas);
+</script>
+{% endblock %}
+{% block extra_css %}
+<style>
+.signature-canvas {
+    width: 100%;
+    max-width: 600px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    margin-bottom: 0.5rem;
+}
+.signature-actions {
+    margin: 0.5rem 0;
+}
+</style>
+{% endblock %}
