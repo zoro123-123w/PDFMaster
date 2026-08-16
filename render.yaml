@@ -16,9 +16,13 @@ services:
       - key: AI_API_KEY
         value: ""
       - key: AI_PROVIDER
-        value: ""
+        value: "groq"
+      - key: AI_BASE_URL
+        value: "https://api.groq.com/openai/v1"
       - key: AI_DEFAULT_MODEL
-        value: ""
+        value: "llama-3.3-70b-versatile"
+      - key: AI_TIMEOUT_SECONDS
+        value: "30"
       - key: TESSERACT_CMD
         value: "/usr/bin/tesseract"
     plan: free

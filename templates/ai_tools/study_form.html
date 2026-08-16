@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load static %}
 {% block title %}{{ tool_name }} - PDFMaster{% endblock %}
 {% block meta_description %}{{ tool_name }} - PDFMaster AI study tool.{% endblock %}
 
@@ -12,6 +11,7 @@
         <div class="tool-container">
             <form method="post" enctype="multipart/form-data" id="studyForm">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="study">
                 <div class="form-group">
                     <label for="id_file">Upload PDF</label>
                     <div class="upload-area" id="dropZone">

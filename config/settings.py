@@ -95,6 +95,7 @@ AI_API_KEY = os.getenv('AI_API_KEY', '')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'openai')
 AI_DEFAULT_MODEL = os.getenv('AI_DEFAULT_MODEL', 'gpt-4o-mini')
 AI_BASE_URL = os.getenv('AI_BASE_URL', '')
+AI_TIMEOUT_SECONDS = float(os.getenv('AI_TIMEOUT_SECONDS', '30'))
 
 # OCR (Tesseract) - optional system dependency
 TESSERACT_CMD = os.getenv('TESSERACT_CMD', '')

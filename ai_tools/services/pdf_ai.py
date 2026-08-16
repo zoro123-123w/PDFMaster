@@ -11,7 +11,7 @@ from django.conf import settings
 from pypdf import PdfReader
 import pymupdf
 
-from .ai_provider import AIServiceError, call_ai, truncate_text
+from .ai_provider import AIServiceError, call_ai, truncate_text, MAX_PROMPT_CHARS
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,13 @@ ANSWER_SYSTEM = (
     'say so clearly.'
 )
 
+MIN_TEXT_LENGTH = 50
+
+
+class ExtractionError(ValueError):
+    """Raised when no sufficient text can be extracted from a PDF."""
+    pass
+
 
 def get_ai_config():
     """Return AI provider configuration read from Django settings.
@@ -49,36 +56,59 @@ def get_ai_config():
 
 def _extract_with_pypdf(file_path):
     reader = PdfReader(file_path)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() or ""
-    return text.strip()
+    try:
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            text += page_text
+        return text.strip()
+    finally:
+        try:
+            reader.stream.close()
+        except Exception:
+            pass
 
 
 def _extract_with_fitz(file_path):
     doc = pymupdf.open(file_path)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    doc.close()
-    return text.strip()
+    try:
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text.strip()
+    finally:
+        doc.close()
 
 
 def extract_text_from_pdf(file_path):
-    """Extract all text from a PDF, trying pypdf first then PyMuPDF."""
+    """Extract all text from a PDF, trying pypdf first then PyMuPDF.
+
+    Raises :class:`ExtractionError` when the extracted text is empty or
+    shorter than ``MIN_TEXT_LENGTH`` characters – this usually means the
+    PDF is a scanned image rather than a text-based document.
+    """
+    text = ""
     try:
         text = _extract_with_pypdf(file_path)
         if text:
-            return text
-    except Exception:
-        pass
-    try:
-        text = _extract_with_fitz(file_path)
-        if text:
-            return text
-    except Exception:
-        pass
-    raise ValueError("Could not extract text from PDF")
+            pass
+    except Exception as exc:
+        logger.debug('pypdf extraction failed: %s', exc)
+
+    if not text:
+        try:
+            text = _extract_with_fitz(file_path)
+        except Exception as exc:
+            logger.debug('pymupdf extraction failed: %s', exc)
+
+    text = text.strip()
+    if len(text) < MIN_TEXT_LENGTH:
+        raise ExtractionError(
+            'Could not extract text from this PDF. Please ensure it is a '
+            'text-based document and not a scanned image. For scanned PDFs, '
+            'use the OCR tool first (Tools -> OCR PDF).'
+        )
+    return text
 
 
 def chunk_text(text, max_chars=MAX_CONTEXT_CHARS):
@@ -106,9 +136,6 @@ def summarize_pdf(file_path):
     Falls back to returning the extracted text when no AI key is configured.
     """
     text = extract_text_from_pdf(file_path)
-    if not text:
-        raise ValueError("No text could be extracted from the PDF to summarise.")
-
     config = get_ai_config()
     if config['api_key']:
         try:
@@ -132,7 +159,6 @@ def summarize_pdf(file_path):
             return combined[0].strip()
         except AIServiceError:
             return text
-    # No API key configured – return extracted text as a baseline summary.
     return text
 
 

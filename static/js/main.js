@@ -1,9 +1,243 @@
+function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookies = document.cookie ? document.cookie.split(';') : [];
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.indexOf(name + '=') === 0) {
+            return decodeURIComponent(cookie.substring(name.length + 1));
+        }
+    }
+    const tokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+    return tokenEl ? tokenEl.value : '';
+}
+
+function csrfFetch(url, options) {
+    const defaults = {
+        credentials: 'same-origin',
+        headers: {},
+    };
+    const token = getCSRFToken();
+    if (token) {
+        defaults.headers['X-CSRFToken'] = token;
+    }
+    const opts = Object.assign({}, defaults, options);
+    opts.headers = Object.assign({}, defaults.headers, options.headers || {});
+    return fetch(url, opts);
+}
+
+function csrfPost(url, formData) {
+    return csrfFetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+}
+
+function showLoadingSpinner(container) {
+    const spinner = document.createElement('div');
+    spinner.className = 'ai-spinner-overlay';
+    spinner.id = 'aiSpinner';
+    spinner.innerHTML = `
+        <div class="ai-spinner-content">
+            <div class="spinner"></div>
+            <p class="ai-processing-text">AI is processing your PDF…</p>
+            <p class="ai-processing-sub">This usually takes a few seconds.</p>
+        </div>
+    `;
+    container.appendChild(spinner);
+    return spinner;
+}
+
+function hideLoadingSpinner() {
+    const spinner = document.getElementById('aiSpinner');
+    if (spinner) spinner.remove();
+}
+
+function displayAIResult(container, html, jobId, toolLabel) {
+    let resultDiv = document.getElementById('aiResultOutput');
+    if (!resultDiv) {
+        resultDiv = document.createElement('div');
+        resultDiv.id = 'aiResultOutput';
+        resultDiv.className = 'ai-result-box';
+        resultDiv.innerHTML = `
+            <div class="ai-result-header">
+                <h3>Result</h3>
+                <div class="ai-result-actions">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="copyResult()">Copy</button>
+                    ${jobId ? `<a href="/ai-tools/request/${jobId}/" class="btn btn-outline btn-sm">View Full Result</a>` : ''}
+                </div>
+            </div>
+            <div class="ai-result-content" id="aiResultContent"></div>
+        `;
+        container.appendChild(resultDiv);
+    }
+    const contentEl = document.getElementById('aiResultContent');
+    if (contentEl) {
+        contentEl.innerHTML = html;
+    }
+}
+
+function displayAIError(container, message) {
+    let errorDiv = document.getElementById('aiErrorBox');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'aiErrorBox';
+        errorDiv.className = 'message message-error ajax-error';
+        container.appendChild(errorDiv);
+    }
+    errorDiv.textContent = message;
+}
+
+function clearAIOutput() {
+    const out = document.getElementById('aiResultOutput');
+    const err = document.getElementById('aiErrorBox');
+    if (out) out.remove();
+    if (err) err.remove();
+}
+
+function copyResult() {
+    const el = document.getElementById('aiResultContent');
+    if (!el) return;
+    const text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Copied to clipboard!');
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     setupDragAndDrop();
     setupMobileMenu();
     setupThemeToggle();
     setupFileList();
+    setupCSRF();
+    setupAIStudyAjax();
+    setupAIPDFToolAjax();
 });
+
+function setupCSRF() {
+    const token = getCSRFToken();
+    if (token) {
+        document.addEventListener('readystatechange', function() {
+            if (typeof jQuery !== 'undefined') {
+                jQuery.defaults.headers['X-CSRFToken'] = token;
+            }
+        });
+    }
+}
+
+function setupAIStudyAjax() {
+    const forms = document.querySelectorAll('form#studyForm, form#quizForm, form#flashcardForm');
+    forms.forEach(function(form) {
+        const container = form.closest('.tool-container');
+        if (!container) return;
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearAIOutput();
+            const spinner = showLoadingSpinner(container);
+
+            const formData = new FormData(form);
+            // Ensure the submit button is disabled during the request
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            csrfPost(window.location.href, formData)
+                .then(function(resp) {
+                    hideLoadingSpinner();
+                    if (submitBtn) submitBtn.disabled = false;
+
+                    if (resp.ok && resp.redirected) {
+                        window.location.href = resp.url;
+                        return;
+                    }
+                    if (resp.ok) {
+                        return resp.json().then(function(data) {
+                            if (data.result) {
+                                let html;
+                                try {
+                                    const parsed = JSON.parse(data.result);
+                                    html = JSON.stringify(parsed, null, 2);
+                                } catch (e) {
+                                    html = escapeHtml(data.result);
+                                }
+                                displayAIResult(container, html, data.job_id, data.tool_label);
+                            }
+                            return;
+                        });
+                    }
+                    if (resp.status === 400 || resp.status === 502 || resp.status === 500) {
+                        return resp.json().then(function(data) {
+                            displayAIError(container, data.error || 'Something went wrong.');
+                        });
+                    }
+                    displayAIError(container, 'Unexpected response from server.');
+                })
+                .catch(function(err) {
+                    hideLoadingSpinner();
+                    if (submitBtn) submitBtn.disabled = false;
+                    displayAIError(container, 'Connection error: ' + err.message);
+                });
+        });
+    });
+}
+
+function setupAIPDFToolAjax() {
+    const forms = document.querySelectorAll('form#aiToolForm');
+    forms.forEach(function(form) {
+        const container = form.closest('.tool-container');
+        if (!container) return;
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearAIOutput();
+            const spinner = showLoadingSpinner(container);
+
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            csrfPost(window.location.href, formData)
+                .then(function(resp) {
+                    hideLoadingSpinner();
+                    if (submitBtn) submitBtn.disabled = false;
+
+                    if (resp.ok && resp.redirected) {
+                        window.location.href = resp.url;
+                        return;
+                    }
+                    if (resp.ok) {
+                        return resp.json().then(function(data) {
+                            if (data.result) {
+                                let html;
+                                try {
+                                    const parsed = JSON.parse(data.result);
+                                    html = JSON.stringify(parsed, null, 2);
+                                } catch (e) {
+                                    html = escapeHtml(data.result);
+                                }
+                                displayAIResult(container, html, data.job_id, data.tool_label);
+                            }
+                            return;
+                        });
+                    }
+                    if (resp.status === 400 || resp.status === 502 || resp.status === 500) {
+                        return resp.json().then(function(data) {
+                            displayAIError(container, data.error || 'Something went wrong.');
+                        });
+                    }
+                    displayAIError(container, 'Unexpected response from server.');
+                })
+                .catch(function(err) {
+                    hideLoadingSpinner();
+                    if (submitBtn) submitBtn.disabled = false;
+                    displayAIError(container, 'Connection error: ' + err.message);
+                });
+        });
+    });
+}
 
 function setupDragAndDrop() {
     const dropZones = document.querySelectorAll('.upload-area');
@@ -56,7 +290,6 @@ function setupThemeToggle() {
         localStorage.setItem('pdfmaster-theme', theme);
     }
 
-    // Respect system preference if the user has never chosen a theme
     let initialTheme = savedTheme;
     if (!localStorage.getItem('pdfmaster-theme')) {
         initialTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

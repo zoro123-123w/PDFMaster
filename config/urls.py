@@ -17,6 +17,7 @@ urlpatterns = [
     path("googlea604197a80b57310.html",google_verification),
     path('admin/', admin.site.urls),
     path('', core_views.home, name='home'),
+    path('robots.txt', core_views.robots_txt, name='robots_txt'),
     path('tools/', include('pdf_tools.urls')),
     path('ai-tools/', include('ai_tools.urls')),
     path('pricing/', core_views.pricing, name='pricing'),

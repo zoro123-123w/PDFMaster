@@ -144,6 +144,38 @@ class PDFToolsURLTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+class AIStudyAjaxTestCase(TestCase):
+    """Test AI Study tools with AJAX JSON 400 responses."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_study_tool_ajax_no_file(self):
+        """POSTing with no file via AJAX returns JSON 400."""
+        response = self.client.post(
+            reverse('ai_study_quiz'),
+            data={},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_X_CSRFTOKEN='dummy',
+        )
+        self.assertEqual(response.status_code, 400)
+        import json
+        data = json.loads(response.content)
+        self.assertIn('error', data)
+
+    def test_study_notes_ajax_no_file(self):
+        """POSTing with no file via AJAX returns JSON 400 for study_notes."""
+        response = self.client.post(
+            reverse('ai_study_notes'),
+            data={},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 400)
+        import json
+        data = json.loads(response.content)
+        self.assertIn('error', data)
+
+
 class AIToolsURLTestCase(TestCase):
 
     def setUp(self):
@@ -297,3 +329,148 @@ class PDFToolsWorkflowTestCase(TestCase):
         pdf = self._make_pdf()
         response = self.client.post(reverse('repair_pdf'), {'file': pdf})
         self.assertIn(response.status_code, [200, 302])
+
+    def test_pdf_to_word_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('pdf_to_word'), {'file': pdf})
+        self.assertEqual(response.status_code, 302)
+
+    def test_pdf_to_excel_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('pdf_to_excel'), {'file': pdf})
+        self.assertEqual(response.status_code, 302)
+
+    def test_pdf_to_ppt_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('pdf_to_ppt'), {'file': pdf})
+        self.assertEqual(response.status_code, 302)
+
+    def test_word_to_pdf_post(self):
+        from docx import Document
+        import io
+        buffer = io.BytesIO()
+        doc = Document()
+        doc.add_paragraph("Hello World")
+        doc.save(buffer)
+        buffer.seek(0)
+        docx = SimpleUploadedFile('test.docx', buffer.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response = self.client.post(reverse('word_to_pdf'), {'file': docx})
+        self.assertEqual(response.status_code, 302)
+
+    def test_excel_to_pdf_post(self):
+        from openpyxl import Workbook
+        buffer = io.BytesIO()
+        wb = Workbook()
+        ws = wb.active
+        ws['A1'] = 'Test'
+        wb.save(buffer)
+        buffer.seek(0)
+        xlsx = SimpleUploadedFile('test.xlsx', buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response = self.client.post(reverse('excel_to_pdf'), {'file': xlsx})
+        self.assertEqual(response.status_code, 302)
+
+    def test_ppt_to_pdf_post(self):
+        from pptx import Presentation
+        import io
+        buffer = io.BytesIO()
+        prs = Presentation()
+        prs.slides.add_slide(prs.slide_layouts[6])
+        prs.save(buffer)
+        buffer.seek(0)
+        pptx = SimpleUploadedFile('test.pptx', buffer.read(), content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+        response = self.client.post(reverse('ppt_to_pdf'), {'file': pptx})
+        self.assertEqual(response.status_code, 302)
+
+    def test_html_to_pdf_post(self):
+        html = SimpleUploadedFile('test.html', b'<html><body><h1>Test</h1></body></html>', content_type='text/html')
+        response = self.client.post(reverse('html_to_pdf'), {'file': html})
+        self.assertEqual(response.status_code, 302)
+
+    def test_txt_to_pdf_post(self):
+        txt = SimpleUploadedFile('test.txt', b'Hello World\nThis is a test.', content_type='text/plain')
+        response = self.client.post(reverse('txt_to_pdf'), {'file': txt})
+        self.assertEqual(response.status_code, 302)
+
+    def test_protect_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('protect_pdf'), {
+            'file': pdf, 'password': 'secret123', 'confirm_password': 'secret123'
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_unlock_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('unlock_pdf'), {
+            'file': pdf, 'password': 'secret123'
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_add_text_to_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('add_text_to_pdf'), {
+            'file': pdf, 'text': 'Hello', 'page_number': '1', 'x': '50', 'y': '50', 'fontsize': '12'
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_annotate_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('annotate_pdf'), {
+            'file': pdf, 'text': 'Note', 'page_number': '1', 'x': '50', 'y': '50', 'fontsize': '12'
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_highlight_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('highlight_pdf'), {
+            'file': pdf, 'words': 'test', 'color': 'yellow', 'page_number': '0'
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_redact_pdf_post(self):
+        pdf = self._make_pdf()
+        response = self.client.post(reverse('redact_pdf'), {
+            'file': pdf, 'words': 'test'
+        })
+        self.assertEqual(response.status_code, 302)
+
+
+class RobotsAndSitemapTestCase(TestCase):
+    """Test robots.txt and sitemap.xml endpoints."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_robots_txt(self):
+        response = self.client.get('/robots.txt')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/plain')
+        content = response.content.decode()
+        self.assertIn('User-agent: *', content)
+        self.assertIn('Disallow: /admin/', content)
+        self.assertIn('Disallow: /accounts/', content)
+        self.assertIn('Disallow: /dashboard/', content)
+        self.assertIn('Sitemap:', content)
+        self.assertIn('/sitemap.xml', content)
+
+    def test_sitemap_xml(self):
+        response = self.client.get('/sitemap.xml')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/xml')
+        content = response.content.decode()
+        self.assertIn('<urlset', content)
+        self.assertIn('<url>', content)
+        self.assertIn('/pricing/', content)
+        self.assertIn('/faq/', content)
+        self.assertIn('/tools/pdf-to-word/', content)
+        self.assertIn('/ai-tools/', content)
+        # Ensure private pages are excluded
+        self.assertNotIn('/accounts/login/', content)
+        self.assertNotIn('/register/', content)
+        self.assertNotIn('/dashboard/', content)
+        self.assertNotIn('/admin/', content)
+
+    def test_sitemap_excludes_download_urls(self):
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode()
+        self.assertNotIn('/tools/download/', content)
+        self.assertNotIn('/ai-tools/request/', content)

@@ -896,3 +896,94 @@ body,
     margin-bottom: 0.5rem;
     font-weight: 500;
 }
+
+/* ===== AI processing spinner ===== */
+.ai-spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.ai-spinner-content {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: var(--radius);
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    max-width: 90%;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1rem;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-processing-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.ai-processing-sub {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+/* ===== AI result display ===== */
+.ai-result-box {
+    margin-top: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    overflow: hidden;
+}
+
+.ai-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.ai-result-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.ai-result-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ai-result-content {
+    padding: 1.5rem;
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}

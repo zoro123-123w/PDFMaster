@@ -18,7 +18,7 @@
             {% endif %}
         </p>
         <div class="tool-container">
-            <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data" id="aiToolForm">
                 {% csrf_token %}
                 <div class="upload-area" id="dropZone">
                     <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">

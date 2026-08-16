@@ -12,7 +12,7 @@ so the application never crashes.
 """
 import json
 
-from .ai_provider import AIServiceError, call_ai, truncate_text
+from .ai_provider import AIServiceError, call_ai, truncate_text, safe_truncate, MAX_PROMPT_CHARS
 from .pdf_ai import extract_text_from_pdf, chunk_text, MAX_CONTEXT_CHARS
 
 # --------------------------------------------------------------------------- #
@@ -27,12 +27,14 @@ _STUDY_SYSTEM = (
 
 
 def _extract_for_study(file_path):
-    """Extract and truncate PDF text suitable for a single AI call."""
+    """Extract and safely truncate PDF text suitable for a single AI call.
+
+    Uses :func:`safe_truncate` to cap at ``MAX_PROMPT_CHARS`` (20 000) so that
+    Groq / OpenAI-compatible providers do not reject the request with a 400
+    for exceeding the context window.
+    """
     text = extract_text_from_pdf(file_path)
-    if not text:
-        raise ValueError('No text could be extracted from the PDF. '
-                         'The file may be a scanned image or empty.')
-    return truncate_text(text, MAX_CONTEXT_CHARS)
+    return safe_truncate(text, MAX_PROMPT_CHARS)
 
 
 def _study_call(user_prompt, max_tokens=4000, temperature=0.7):

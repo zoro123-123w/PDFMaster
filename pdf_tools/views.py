@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from django import forms
 from django.forms import Form
 from django.conf import settings
@@ -28,17 +29,29 @@ from .services.rotate import rotate_pdf_service
 from .services.delete_pages import delete_pages_service
 from .services.extract_pages import extract_pages_service
 from .services.convert import (
-    pdf_to_word, word_to_pdf, pdf_to_excel, pdf_to_ppt,
-    html_to_pdf, txt_to_pdf, excel_to_pdf, pptx_to_pdf, image_to_pdf,
+    pdf_to_word as _pdf_to_word, word_to_pdf as _word_to_pdf,
+    pdf_to_excel as _pdf_to_excel, pdf_to_ppt as _pdf_to_ppt,
+    html_to_pdf as _html_to_pdf, txt_to_pdf as _txt_to_pdf,
+    excel_to_pdf as _excel_to_pdf, pptx_to_pdf as _pptx_to_pdf,
+    image_to_pdf as _image_to_pdf,
 )
 from .services.edit import (
-    crop_pdf, watermark_pdf, add_page_numbers, organize_pdf, repair_pdf,
-    add_text_to_pdf, add_image_to_pdf, annotate_pdf, highlight_pdf,
+    crop_pdf as _crop_pdf, watermark_pdf as _watermark_pdf,
+    add_page_numbers as _add_page_numbers, organize_pdf as _organize_pdf,
+    repair_pdf as _repair_pdf,
+    add_text_to_pdf as _add_text_to_pdf,
+    add_image_to_pdf as _add_image_to_pdf,
+    annotate_pdf as _annotate_pdf, highlight_pdf as _highlight_pdf,
 )
 from .services.ocr import ocr_pdf, OCRNotConfiguredError, tesseract_available
-from .services.security import protect_pdf, unlock_pdf, redact_pdf
+from .services.security import (
+    protect_pdf as _protect_pdf, unlock_pdf as _unlock_pdf, redact_pdf as _redact_pdf,
+)
 from .services.signature import sign_pdf, SignatureError, decode_signature_image
 from .services.utils import create_output_path
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_ip(request):
@@ -51,6 +64,11 @@ def validate_pdf(file_obj):
         return False, f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE // (1024*1024)} MB"
     if not file_obj.name.lower().endswith('.pdf'):
         return False, "File is not a PDF"
+    file_obj.seek(0)
+    header = file_obj.read(5)
+    file_obj.seek(0)
+    if not header.startswith(b'%PDF-'):
+        return False, "Invalid PDF file"
     try:
         import pypdf
         pypdf.PdfReader(file_obj)
@@ -662,7 +680,8 @@ def _handle_pdf_config_tool(request, tool_name, tool_label, config_form_class,
         except ValueError as e:
             messages.error(request, str(e))
         except Exception:
-            messages.error(request, f"Something went wrong while processing the PDF")
+            logger.exception('PDF processing failed for tool %s', tool_name)
+            messages.error(request, "Something went wrong while processing the PDF")
         finally:
             try:
                 os.remove(file_path)
@@ -702,28 +721,28 @@ def _download_image_zip(image_paths):
 
 def pdf_to_word(request):
     return _handle_pdf_config_tool(
-        request, 'pdf_to_word', 'PDF to Word', Form, pdf_to_word,
+        request, 'pdf_to_word', 'PDF to Word', Form, _pdf_to_word,
         '.docx', 'pdf_tools/config_form.html', needs_config=False,
         submit_label='Convert to Word')
 
 
 def pdf_to_excel(request):
     return _handle_pdf_config_tool(
-        request, 'pdf_to_excel', 'PDF to Excel', Form, pdf_to_excel,
+        request, 'pdf_to_excel', 'PDF to Excel', Form, _pdf_to_excel,
         '.xlsx', 'pdf_tools/config_form.html', needs_config=False,
         submit_label='Convert to Excel')
 
 
 def pdf_to_ppt(request):
     return _handle_pdf_config_tool(
-        request, 'pdf_to_ppt', 'PDF to PowerPoint', Form, pdf_to_ppt,
+        request, 'pdf_to_ppt', 'PDF to PowerPoint', Form, _pdf_to_ppt,
         '.pptx', 'pdf_tools/config_form.html', needs_config=False,
         submit_label='Convert to PowerPoint')
 
 
 def word_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'word_to_pdf', 'Word to PDF', Form, word_to_pdf,
+        request, 'word_to_pdf', 'Word to PDF', Form, _word_to_pdf,
         '.pdf', 'pdf_tools/config_form.html',
         validate_fn=validate_docx, needs_config=False,
         file_accept='.docx', submit_label='Convert to PDF')
@@ -731,7 +750,7 @@ def word_to_pdf(request):
 
 def excel_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'excel_to_pdf', 'Excel to PDF', Form, excel_to_pdf,
+        request, 'excel_to_pdf', 'Excel to PDF', Form, _excel_to_pdf,
         '.pdf', 'pdf_tools/config_form.html',
         validate_fn=validate_xlsx, needs_config=False,
         file_accept='.xlsx,.xls', submit_label='Convert to PDF')
@@ -739,7 +758,7 @@ def excel_to_pdf(request):
 
 def ppt_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'ppt_to_pdf', 'PowerPoint to PDF', Form, pptx_to_pdf,
+        request, 'ppt_to_pdf', 'PowerPoint to PDF', Form, _pptx_to_pdf,
         '.pdf', 'pdf_tools/config_form.html',
         validate_fn=validate_pptx, needs_config=False,
         file_accept='.pptx,.ppt', submit_label='Convert to PDF')
@@ -747,7 +766,7 @@ def ppt_to_pdf(request):
 
 def html_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'html_to_pdf', 'HTML to PDF', Form, html_to_pdf,
+        request, 'html_to_pdf', 'HTML to PDF', Form, _html_to_pdf,
         '.pdf', 'pdf_tools/config_form.html',
         validate_fn=validate_html, needs_config=False,
         file_accept='.html,.htm', submit_label='Convert to PDF')
@@ -755,7 +774,7 @@ def html_to_pdf(request):
 
 def txt_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'txt_to_pdf', 'TXT to PDF', Form, txt_to_pdf,
+        request, 'txt_to_pdf', 'TXT to PDF', Form, _txt_to_pdf,
         '.pdf', 'pdf_tools/config_form.html',
         validate_fn=validate_txt, needs_config=False,
         file_accept='.txt', submit_label='Convert to PDF')
@@ -837,25 +856,25 @@ def _handle_image_to_pdf(request, tool_name, tool_label, template):
 
 def crop_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'crop_pdf', 'Crop PDF', CropForm, crop_pdf,
+        request, 'crop_pdf', 'Crop PDF', CropForm, _crop_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def watermark_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'watermark_pdf', 'Watermark PDF', WatermarkForm, watermark_pdf,
+        request, 'watermark_pdf', 'Watermark PDF', WatermarkForm, _watermark_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def add_page_numbers(request):
     return _handle_pdf_config_tool(
-        request, 'add_page_numbers', 'Add Page Numbers', PageNumberForm, add_page_numbers,
+        request, 'add_page_numbers', 'Add Page Numbers', PageNumberForm, _add_page_numbers,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def add_text_to_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'add_text_to_pdf', 'Add Text to PDF', AddTextForm, add_text_to_pdf,
+        request, 'add_text_to_pdf', 'Add Text to PDF', AddTextForm, _add_text_to_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
@@ -882,7 +901,7 @@ def add_image_to_pdf(request):
             img_path = save_uploaded_file(image_file)
             try:
                 data = image_form.cleaned_data
-                output_path = add_image_to_pdf(pdf_path, img_path, data)
+                output_path = _add_image_to_pdf(pdf_path, img_path, data)
                 output_filename = os.path.splitext(pdf_file.name)[0] + '.pdf'
                 job = ProcessingJob.objects.create(
                     user=request.user if request.user.is_authenticated else None,
@@ -921,25 +940,25 @@ def add_image_to_pdf(request):
 
 def annotate_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'annotate_pdf', 'Annotate PDF', AnnotateForm, annotate_pdf,
+        request, 'annotate_pdf', 'Annotate PDF', AnnotateForm, _annotate_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def highlight_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'highlight_pdf', 'Highlight PDF', HighlightForm, highlight_pdf,
+        request, 'highlight_pdf', 'Highlight PDF', HighlightForm, _highlight_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def redact_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'redact_pdf', 'Redact PDF', RedactForm, redact_pdf,
+        request, 'redact_pdf', 'Redact PDF', RedactForm, _redact_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def organize_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'organize_pdf', 'Organize/Reorder Pages', OrganizeForm, organize_pdf,
+        request, 'organize_pdf', 'Organize/Reorder Pages', OrganizeForm, _organize_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
@@ -949,13 +968,13 @@ def organize_pdf(request):
 
 def protect_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'protect_pdf', 'Protect PDF', ProtectForm, protect_pdf,
+        request, 'protect_pdf', 'Protect PDF', ProtectForm, _protect_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
 def unlock_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'unlock_pdf', 'Unlock PDF', PasswordForm, unlock_pdf,
+        request, 'unlock_pdf', 'Unlock PDF', PasswordForm, _unlock_pdf,
         '.pdf', 'pdf_tools/config_form.html')
 
 
@@ -1020,7 +1039,7 @@ def sign_pdf_view(request):
 
 def repair_pdf(request):
     return _handle_pdf_config_tool(
-        request, 'repair_pdf', 'Repair PDF', Form, repair_pdf,
+        request, 'repair_pdf', 'Repair PDF', Form, _repair_pdf,
         '.pdf', 'pdf_tools/config_form.html', needs_config=False)
 
 
@@ -1058,7 +1077,7 @@ def scan_to_pdf(request):
                                'submit_label': 'Scan to Searchable PDF'})
             file_paths.append(save_uploaded_file(f))
         try:
-            temp_pdf = image_to_pdf(file_paths)
+            temp_pdf = _image_to_pdf(file_paths)
             if not tesseract_available():
                 messages.error(request, "OCR is not available on this server. Install Tesseract to use this feature.")
                 try:
