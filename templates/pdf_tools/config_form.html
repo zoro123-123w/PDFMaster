@@ -36,6 +36,13 @@
                     {% endif %}
                 </div>
                 {% endfor %}
+                {% if form.errors %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <div class="message message-error">{{ field.errors }}</div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary btn-large">{{ tool_name }}</button>
                 </div>

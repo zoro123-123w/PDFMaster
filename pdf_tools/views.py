@@ -822,7 +822,7 @@ def _handle_image_to_pdf(request, tool_name, tool_label, template):
                 return render(request, template, {'form': form, 'tool_name': tool_label})
             file_paths.append(save_uploaded_file(f))
         try:
-            output_path = image_to_pdf(file_paths)
+            output_path = _image_to_pdf(file_paths)
             output_filename = os.path.splitext(files[0].name)[0] + '.pdf'
             job = ProcessingJob.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -840,6 +840,7 @@ def _handle_image_to_pdf(request, tool_name, tool_label, template):
                     pass
             return redirect(reverse('download_file', args=[job.id]))
         except Exception:
+            logger.exception('Image to PDF processing failed for tool %s', tool_name)
             messages.error(request, "Something went wrong while converting images to PDF")
         finally:
             for p in file_paths:

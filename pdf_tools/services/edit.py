@@ -397,7 +397,9 @@ def highlight_pdf(file_path, data):
                 except Exception:
                     regions = []
                 for rect in regions:
-                    page.add_highlight_annot(rect, color=color)
+                    annot = page.add_highlight_annot(rect)
+                    annot.set_colors(stroke=color)
+                    annot.update()
         pdf.save(output_path, garbage=3, deflate=True)
     finally:
         pdf.close()
