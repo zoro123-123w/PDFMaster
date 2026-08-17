@@ -14,13 +14,13 @@ services:
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
       - key: AI_API_KEY
-        value: ""
+        sync: false
       - key: AI_PROVIDER
         value: "groq"
       - key: AI_BASE_URL
         value: "https://api.groq.com/openai/v1"
       - key: AI_DEFAULT_MODEL
-        value: "llama-3.3-70b-versatile"
+        value: "openai/gpt-oss-120b"
       - key: AI_TIMEOUT_SECONDS
         value: "30"
       - key: TESSERACT_CMD

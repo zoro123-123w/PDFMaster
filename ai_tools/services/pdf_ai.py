@@ -11,7 +11,7 @@ from django.conf import settings
 from pypdf import PdfReader
 import pymupdf
 
-from .ai_provider import AIServiceError, call_ai, truncate_text, MAX_PROMPT_CHARS
+from .ai_provider import AIServiceError, call_ai, truncate_text, safe_truncate, MAX_PROMPT_CHARS, DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +47,10 @@ def get_ai_config():
     so the same code works on localhost and on Render.
     """
     return {
-        'provider': getattr(settings, 'AI_PROVIDER', 'openai'),
+        'provider': getattr(settings, 'AI_PROVIDER', 'groq'),
         'api_key': bool(getattr(settings, 'AI_API_KEY', '')),
-        'model': getattr(settings, 'AI_DEFAULT_MODEL', 'gpt-4o-mini'),
-        'base_url': getattr(settings, 'AI_BASE_URL', ''),
+        'model': getattr(settings, 'AI_DEFAULT_MODEL', DEFAULT_MODEL),
+        'base_url': getattr(settings, 'AI_BASE_URL', 'https://api.groq.com/openai/v1'),
     }
 
 

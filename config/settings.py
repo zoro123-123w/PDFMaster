@@ -92,9 +92,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # AI Integration (optional - for AI-powered PDF features)
 # Configuration is read from environment variables only; API keys are never hardcoded.
 AI_API_KEY = os.getenv('AI_API_KEY', '')
-AI_PROVIDER = os.getenv('AI_PROVIDER', 'openai')
-AI_DEFAULT_MODEL = os.getenv('AI_DEFAULT_MODEL', 'gpt-4o-mini')
-AI_BASE_URL = os.getenv('AI_BASE_URL', '')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'groq')
+AI_DEFAULT_MODEL = os.getenv('AI_DEFAULT_MODEL', 'openai/gpt-oss-120b')
+AI_BASE_URL = os.getenv('AI_BASE_URL', 'https://api.groq.com/openai/v1')
 AI_TIMEOUT_SECONDS = float(os.getenv('AI_TIMEOUT_SECONDS', '30'))
 
 # OCR (Tesseract) - optional system dependency
