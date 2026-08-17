@@ -232,7 +232,17 @@ class OpenAIProvider(AIProvider):
         except AIServiceError:
             raise
         except Exception as exc:
-            _classify_openai_error(exc, self.model)
+            try:
+                _classify_openai_error(exc, self.model)
+            except AIServiceError:
+                raise
+            except Exception as classify_exc:
+                logger.exception(
+                    'Error classifier failed (model=%s): %s — original exc: %s',
+                    self.model, type(classify_exc).__name__, type(exc).__name__)
+                raise AIServiceError(
+                    'The AI service returned an unexpected error. '
+                    'Check the server logs for details.') from exc
 
 
 _PROVIDER_CACHE = None
@@ -281,7 +291,7 @@ def call_ai(system_prompt, user_prompt, max_tokens=2000, temperature=0.7):
             'Ensure the PDF contains extractable text.')
 
     provider = get_ai_provider()
-    if provider is None:
+    if not provider:
         raise AIServiceError(
             'AI service is not configured. Please set AI_API_KEY in your '
             'environment variables to use AI-powered features.')

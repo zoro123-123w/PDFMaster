@@ -458,6 +458,31 @@ class CallAIIntegrationTests(TestCase):
             call_ai('system', 'user prompt')
         self.assertIn('not configured', str(ctx.exception))
 
+    @override_settings(
+        AI_PROVIDER='groq',
+        AI_API_KEY='fake-key',
+        AI_BASE_URL='https://api.groq.com/openai/v1',
+        AI_DEFAULT_MODEL='openai/gpt-oss-120b',
+    )
+    def test_provider_cache_false_handled(self):
+        """Verify that a cached False (not None) from get_ai_provider
+        doesn't cause AttributeError in call_ai."""
+        # Simulate a previous request that cached False (no API key was set)
+        reset_ai_provider_cache()
+        with override_settings(AI_API_KEY=''):
+            reset_ai_provider_cache()
+            # First call with no key caches False
+            result = get_ai_provider()
+            self.assertIsNone(result)  # None is returned, False is cached
+
+        # Now with API key set, but cache still has False
+        with override_settings(AI_API_KEY='fake-key'):
+            reset_ai_provider_cache()
+            # Clear the False cache by resetting
+            result = get_ai_provider()
+            self.assertIsNotNone(result)
+            self.assertIsInstance(result, OpenAIProvider)
+
 
 class QuizEndpointTests(TestCase):
     """Verify the quiz endpoint behavior with mocked AI."""
