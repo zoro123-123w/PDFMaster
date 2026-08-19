@@ -106,7 +106,6 @@ function copyResult() {
     });
 }
 
-
 document.addEventListener('DOMContentLoaded', function() {
     setupDragAndDrop();
     setupMobileMenu();
@@ -128,6 +127,113 @@ function setupCSRF() {
     }
 }
 
+/* ---------------------------------------------------------------- */
+/* Quiz rendering helpers                                            */
+/* ---------------------------------------------------------------- */
+let quizCounter = 0;
+
+function injectQuizStyles() {
+    if (document.getElementById('quizInlineStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'quizInlineStyles';
+    style.textContent = `
+        .quiz-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
+        .quiz-score { font-weight: 600; margin-bottom: .5rem; }
+        .quiz-question { padding: 1rem; border: 1px solid rgba(128,128,128,.25); border-radius: 8px; }
+        .quiz-question-text { margin-bottom: .75rem; }
+        .quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+        .quiz-option { display: flex; align-items: center; gap: .5rem; text-align: left; padding: .6rem .8rem; border: 1px solid rgba(128,128,128,.35); border-radius: 6px; background: transparent; cursor: pointer; font: inherit; width: 100%; }
+        .quiz-option:hover:not(:disabled) { border-color: #6366f1; }
+        .quiz-option:disabled { cursor: default; }
+        .quiz-option-letter { font-weight: 700; opacity: .7; margin-right: .4rem; }
+        .quiz-correct { background: rgba(34,197,94,.15); border-color: #22c55e !important; }
+        .quiz-incorrect { background: rgba(239,68,68,.15); border-color: #ef4444 !important; }
+        .quiz-explanation { margin-top: .6rem; padding: .6rem .8rem; border-radius: 6px; background: rgba(99,102,241,.08); font-size: .9rem; }
+    `;
+    document.head.appendChild(style);
+}
+
+function buildQuizHTML(data, quizId) {
+    if (!data || !Array.isArray(data.questions) || data.questions.length === 0) {
+        return null;
+    }
+    let html = '<div class="quiz-wrapper" id="' + quizId + '">';
+    html += '<div class="quiz-score">Score: <span id="' + quizId + '-score-val">0</span> / ' + data.questions.length + '</div>';
+    data.questions.forEach(function(q, qIndex) {
+        html += '<div class="quiz-question" data-qindex="' + qIndex + '">';
+        html += '<p class="quiz-question-text"><strong>Q' + (qIndex + 1) + '.</strong> ' + escapeHtml(q.question) + '</p>';
+        html += '<div class="quiz-options">';
+        (q.options || []).forEach(function(opt, oIndex) {
+            const letter = String.fromCharCode(97 + oIndex);
+            html += '<button type="button" class="quiz-option" data-oletter="' + letter + '">' +
+                    '<span class="quiz-option-letter">' + letter.toUpperCase() + '.</span>' +
+                    '<span class="quiz-option-text">' + escapeHtml(opt) + '</span>' +
+                    '</button>';
+        });
+        html += '</div><div class="quiz-explanation" style="display:none;"></div></div>';
+    });
+    html += '</div>';
+    return html;
+}
+
+function attachQuizHandlers(container, data, quizId) {
+    let score = 0;
+    const quizEl = container.querySelector('#' + quizId);
+    if (!quizEl) return;
+    quizEl.querySelectorAll('.quiz-question').forEach(function(qEl) {
+        const qIndex = parseInt(qEl.getAttribute('data-qindex'), 10);
+        const qData = data.questions[qIndex];
+        const optionBtns = qEl.querySelectorAll('.quiz-option');
+        optionBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (qEl.classList.contains('answered')) return;
+                qEl.classList.add('answered');
+                const chosen = btn.getAttribute('data-oletter');
+                const correct = qData.answer;
+                optionBtns.forEach(function(b) {
+                    b.disabled = true;
+                    if (b.getAttribute('data-oletter') === correct) b.classList.add('quiz-correct');
+                    else if (b === btn) b.classList.add('quiz-incorrect');
+                });
+                if (chosen === correct) score++;
+                const scoreVal = document.getElementById(quizId + '-score-val');
+                if (scoreVal) scoreVal.textContent = score;
+                const explEl = qEl.querySelector('.quiz-explanation');
+                if (explEl && qData.explanation) {
+                    explEl.textContent = qData.explanation;
+                    explEl.style.display = 'block';
+                }
+            });
+        });
+    });
+}
+
+function renderAIStudyResult(container, data) {
+    let parsed = null;
+    try {
+        parsed = JSON.parse(data.result);
+    } catch (e) {
+        parsed = null;
+    }
+    if (parsed && Array.isArray(parsed.questions)) {
+        injectQuizStyles();
+        quizCounter++;
+        const quizId = 'quiz-' + quizCounter;
+        const quizHtml = buildQuizHTML(parsed, quizId);
+        displayAIResult(container, quizHtml, data.job_id, data.tool_label);
+        attachQuizHandlers(container, parsed, quizId);
+    } else {
+        let html;
+        try {
+            html = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            html = escapeHtml(data.result);
+        }
+        displayAIResult(container, html, data.job_id, data.tool_label);
+    }
+}
+/* ---------------------------------------------------------------- */
+
 function setupAIStudyAjax() {
     const forms = document.querySelectorAll('form#studyForm, form#quizForm, form#flashcardForm');
     forms.forEach(function(form) {
@@ -140,7 +246,6 @@ function setupAIStudyAjax() {
             const spinner = showLoadingSpinner(container);
 
             const formData = new FormData(form);
-            // Ensure the submit button is disabled during the request
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) submitBtn.disabled = true;
 
@@ -156,14 +261,7 @@ function setupAIStudyAjax() {
                     if (resp.ok) {
                         return resp.json().then(function(data) {
                             if (data.result) {
-                                let html;
-                                try {
-                                    const parsed = JSON.parse(data.result);
-                                    html = JSON.stringify(parsed, null, 2);
-                                } catch (e) {
-                                    html = escapeHtml(data.result);
-                                }
-                                displayAIResult(container, html, data.job_id, data.tool_label);
+                                renderAIStudyResult(container, data);
                             }
                             return;
                         });
