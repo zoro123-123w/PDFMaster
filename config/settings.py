@@ -75,6 +75,12 @@ if os.getenv('CSRF_TRUSTED_ORIGINS'):
 
 X_FRAME_OPTIONS = 'DENY'
 
+# Trust X-Forwarded-Proto from Render's load balancer so
+# request.is_secure() and build_absolute_uri() use HTTPS in production.
+if os.getenv('RENDER') or not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True

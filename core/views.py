@@ -55,20 +55,24 @@ def dashboard(request):
 
 def robots_txt(request):
     """Dynamic robots.txt that always points to the correct sitemap URL
-    based on the request domain (handles both local and production)."""
-    host = request.get_host()
-    sitemap_url = f"https://{host}/sitemap.xml"
-    lines = [
-        "User-agent: *",
-        "Disallow: /admin/",
-        "Disallow: /accounts/",
-        "Disallow: /dashboard/",
-        "Disallow: /media/",
-        "Disallow: /static/",
-        "Disallow: /tools/download/",
-        "Disallow: /ai-tools/request/",
-        "",
-        f"Sitemap: {sitemap_url}",
-        "",
-    ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
+    based on the request domain (handles both local and production).
+
+    The sitemap URL always uses HTTPS since the production site is HTTPS-only.
+    """
+    sitemap_url = request.build_absolute_uri('/sitemap.xml')
+    if sitemap_url.startswith('http://'):
+        sitemap_url = 'https://' + sitemap_url[7:]
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin/\n"
+        "Disallow: /accounts/\n"
+        "Disallow: /dashboard/\n"
+        "Disallow: /media/\n"
+        "Disallow: /static/\n"
+        "Disallow: /tools/download/\n"
+        "Disallow: /ai-tools/request/\n"
+        "\n"
+        f"Sitemap: {sitemap_url}\n"
+    )
+    return HttpResponse(content, content_type="text/plain")
