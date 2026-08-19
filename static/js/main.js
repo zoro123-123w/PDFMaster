@@ -127,15 +127,15 @@ function setupCSRF() {
     }
 }
 
-/* ---------------------------------------------------------------- */
-/* Quiz rendering helpers                                            */
-/* ---------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* Study result rendering (quiz / flashcards / plain-text tools)       */
+/* ------------------------------------------------------------------ */
 let quizCounter = 0;
 
-function injectQuizStyles() {
-    if (document.getElementById('quizInlineStyles')) return;
+function injectStudyStyles() {
+    if (document.getElementById('studyInlineStyles')) return;
     const style = document.createElement('style');
-    style.id = 'quizInlineStyles';
+    style.id = 'studyInlineStyles';
     style.textContent = `
         .quiz-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
         .quiz-score { font-weight: 600; margin-bottom: .5rem; }
@@ -149,14 +149,24 @@ function injectQuizStyles() {
         .quiz-correct { background: rgba(34,197,94,.15); border-color: #22c55e !important; }
         .quiz-incorrect { background: rgba(239,68,68,.15); border-color: #ef4444 !important; }
         .quiz-explanation { margin-top: .6rem; padding: .6rem .8rem; border-radius: 6px; background: rgba(99,102,241,.08); font-size: .9rem; }
+
+        .flashcard-wrapper { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .flashcard-counter { font-weight: 600; }
+        .flashcard-box { width: 100%; max-width: 480px; min-height: 180px; border: 1px solid rgba(128,128,128,.3); border-radius: 10px; padding: 1.5rem; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; font-size: 1.05rem; }
+        .flashcard-box .fc-label { display: block; font-size: .75rem; opacity: .6; margin-bottom: .5rem; text-transform: uppercase; letter-spacing: .05em; }
+        .flashcard-nav { display: flex; gap: .75rem; }
+
+        .study-text h3, .study-text h4, .study-text h5, .study-text h6 { margin-top: 1.2rem; margin-bottom: .5rem; }
+        .study-text p { margin: .5rem 0; line-height: 1.6; }
+        .study-text ul { margin: .5rem 0 1rem 1.25rem; }
+        .study-text li { margin-bottom: .35rem; line-height: 1.5; }
     `;
     document.head.appendChild(style);
 }
 
+/* ---- Quiz ---- */
 function buildQuizHTML(data, quizId) {
-    if (!data || !Array.isArray(data.questions) || data.questions.length === 0) {
-        return null;
-    }
+    if (!data || !Array.isArray(data.questions) || data.questions.length === 0) return null;
     let html = '<div class="quiz-wrapper" id="' + quizId + '">';
     html += '<div class="quiz-score">Score: <span id="' + quizId + '-score-val">0</span> / ' + data.questions.length + '</div>';
     data.questions.forEach(function(q, qIndex) {
@@ -208,31 +218,122 @@ function attachQuizHandlers(container, data, quizId) {
     });
 }
 
+/* ---- Flashcards ---- */
+function buildFlashcardHTML(data) {
+    return '<div class="flashcard-wrapper" id="fcWrapper">' +
+        '<div class="flashcard-counter"><span id="fcIndex">1</span> / ' + data.flashcards.length + '</div>' +
+        '<div class="flashcard-box" id="fcCard"><div><span class="fc-label" id="fcLabel">Question (click to flip)</span><span id="fcText"></span></div></div>' +
+        '<div class="flashcard-nav">' +
+            '<button type="button" class="btn btn-outline btn-sm" id="fcPrev">Previous</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" id="fcFlip">Flip</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" id="fcNext">Next</button>' +
+        '</div>' +
+    '</div>';
+}
+
+function attachFlashcardHandlers(container, data) {
+    const cards = data.flashcards;
+    if (!cards || cards.length === 0) return;
+    let idx = 0;
+    let showingBack = false;
+    const indexEl = container.querySelector('#fcIndex');
+    const textEl = container.querySelector('#fcText');
+    const labelEl = container.querySelector('#fcLabel');
+    const cardEl = container.querySelector('#fcCard');
+
+    function render() {
+        const card = cards[idx];
+        indexEl.textContent = idx + 1;
+        labelEl.textContent = showingBack ? 'Answer (click to flip)' : 'Question (click to flip)';
+        textEl.textContent = showingBack ? card.back : card.front;
+    }
+    render();
+
+    cardEl.addEventListener('click', function() { showingBack = !showingBack; render(); });
+    container.querySelector('#fcFlip').addEventListener('click', function() { showingBack = !showingBack; render(); });
+    container.querySelector('#fcNext').addEventListener('click', function() {
+        idx = (idx + 1) % cards.length; showingBack = false; render();
+    });
+    container.querySelector('#fcPrev').addEventListener('click', function() {
+        idx = (idx - 1 + cards.length) % cards.length; showingBack = false; render();
+    });
+}
+
+/* ---- Plain-text tools (notes, guide, question bank, etc.) ---- */
+function inlineFormat(str) {
+    let out = str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+    return out;
+}
+
+function formatStudyText(text) {
+    if (!text) return '<p>No content returned.</p>';
+    const escaped = escapeHtml(text);
+    const lines = escaped.split('\n');
+    let html = '';
+    let inList = false;
+    lines.forEach(function(rawLine) {
+        const trimmed = rawLine.trim();
+        if (trimmed === '') {
+            if (inList) { html += '</ul>'; inList = false; }
+            return;
+        }
+        const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+        if (headingMatch) {
+            if (inList) { html += '</ul>'; inList = false; }
+            const level = Math.min(headingMatch[1].length + 2, 6);
+            html += '<h' + level + '>' + inlineFormat(headingMatch[2]) + '</h' + level + '>';
+            return;
+        }
+        const bulletMatch = trimmed.match(/^[-*]\s+(.*)$/);
+        const numberedMatch = trimmed.match(/^\d+[.)]\s+(.*)$/);
+        if (bulletMatch || numberedMatch) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += '<li>' + inlineFormat((bulletMatch || numberedMatch)[1]) + '</li>';
+            return;
+        }
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<p>' + inlineFormat(trimmed) + '</p>';
+    });
+    if (inList) html += '</ul>';
+    return '<div class="study-text">' + html + '</div>';
+}
+
+/* ---- Main dispatcher ---- */
 function renderAIStudyResult(container, data) {
-    let parsed = null;
+    injectStudyStyles();
+    let parsed;
+    let parseOk = true;
     try {
         parsed = JSON.parse(data.result);
     } catch (e) {
-        parsed = null;
+        parseOk = false;
     }
-    if (parsed && Array.isArray(parsed.questions)) {
-        injectQuizStyles();
+
+    if (parseOk && parsed && typeof parsed === 'object' && Array.isArray(parsed.questions)) {
         quizCounter++;
         const quizId = 'quiz-' + quizCounter;
         const quizHtml = buildQuizHTML(parsed, quizId);
         displayAIResult(container, quizHtml, data.job_id, data.tool_label);
         attachQuizHandlers(container, parsed, quizId);
-    } else {
-        let html;
-        try {
-            html = JSON.stringify(parsed, null, 2);
-        } catch (e) {
-            html = escapeHtml(data.result);
-        }
-        displayAIResult(container, html, data.job_id, data.tool_label);
+        return;
     }
+
+    if (parseOk && parsed && typeof parsed === 'object' && Array.isArray(parsed.flashcards)) {
+        const flashHtml = buildFlashcardHTML(parsed);
+        displayAIResult(container, flashHtml, data.job_id, data.tool_label);
+        attachFlashcardHandlers(container, parsed);
+        return;
+    }
+
+    if (parseOk && parsed && typeof parsed === 'object') {
+        displayAIResult(container, escapeHtml(JSON.stringify(parsed, null, 2)), data.job_id, data.tool_label);
+        return;
+    }
+
+    displayAIResult(container, formatStudyText(data.result), data.job_id, data.tool_label);
 }
-/* ---------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
 
 function setupAIStudyAjax() {
     const forms = document.querySelectorAll('form#studyForm, form#quizForm, form#flashcardForm');
@@ -260,8 +361,10 @@ function setupAIStudyAjax() {
                     }
                     if (resp.ok) {
                         return resp.json().then(function(data) {
-                            if (data.result) {
+                            if (data.result !== undefined && data.result !== null) {
                                 renderAIStudyResult(container, data);
+                            } else {
+                                displayAIError(container, 'The AI returned an empty response. Please try again.');
                             }
                             return;
                         });
