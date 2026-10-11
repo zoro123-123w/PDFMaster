@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Service | PDFMaster{% endblock %}
+{% block meta_description %}The terms that apply when you use PDFMaster: fair use limits, ownership of your files, disclaimers and how we handle availability.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container prose-page">
+        <h1>Terms of Service</h1>
+        <p class="form-hint">Last updated: 10 November 2026</p>
+
+        <h2>1. Acceptance</h2>
+        <p>By using PDFMaster ("the Service") you agree to these terms. If you do
+           not agree, do not use the Service.</p>
+
+        <h2>2. Your files stay yours</h2>
+        <p>You retain full ownership of everything you upload. We process files
+           only to provide the result you requested and delete them automatically
+           afterwards. We claim no rights to your content.</p>
+
+        <h2>3. Acceptable use</h2>
+        <ul>
+            <li>No illegal content, malware or phishing material.</li>
+            <li>No attempts to disrupt, overload or reverse engineer the Service.</li>
+            <li>No automated bulk processing that degrades service for others;
+                contact us for API access instead.</li>
+            <li>No circumvention of upload size, rate or file-count limits.</li>
+        </ul>
+
+        <h2>4. Availability</h2>
+        <p>The Service is provided "as is" and "as available". We run on free
+           infrastructure and may limit, pause or change tools without notice.
+           Files are deleted automatically, so keep your own copies of important
+           documents.</p>
+
+        <h2>5. Disclaimer of warranties</h2>
+        <p>We do not warrant that output files will be free of defects, that
+           results will be identical to any particular desktop tool, or that the
+           Service will be uninterrupted. Compression and conversion are
+           best-effort operations.</p>
+
+        <h2>6. Limitation of liability</h2>
+        <p>To the maximum extent permitted by law, PDFMaster is not liable for any
+           indirect, incidental or consequential damages arising from use of the
+           Service. Our total liability is limited to the amount you paid us in
+           the 12 months before the claim (which is $0 for free use).</p>
+
+        <h2>7. Advertising and third parties</h2>
+        <p>The Service may display third-party ads and link to external sites. We
+           are not responsible for third-party content or practices.</p>
+
+        <h2>8. Termination</h2>
+        <p>We may suspend or block access for anyone violating these terms.
+           You may stop using the Service and delete your account at any time.</p>
+
+        <h2>9. Changes</h2>
+        <p>Continued use after changes are posted constitutes acceptance of the
+           revised terms.</p>
+
+        <h2>10. Contact</h2>
+        <p>Questions about these terms? <a href="{% url 'contact' %}">Contact us</a>.</p>
+    </div>
+</section>
+{% endblock %}

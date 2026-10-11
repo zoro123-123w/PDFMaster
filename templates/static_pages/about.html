@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}About PDFMaster - Free Online PDF Tools{% endblock %}
+{% block meta_description %}PDFMaster is a free, browser-based toolkit for merging, compressing, converting and OCR-ing PDF files. Learn how we built it and why your files stay private.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container prose-page">
+        <h1>About PDFMaster</h1>
+        <p>PDFMaster started as an internal utility for handling the paperwork that
+           piles up around every project: invoices, scans, reports, forms. We wanted
+           one page where the whole team could merge, split, compress, convert and
+           search PDFs without installing heavyweight desktop software or sending
+           documents to yet another subscription service.</p>
+
+        <h2>What we offer</h2>
+        <p>Every tool runs in your browser and does its work on our server in
+           seconds - no queues, no sign-up required for the core tools. From
+           <a href="{% url 'merge_pdf' %}">merging PDFs</a> and
+           <a href="{% url 'compress_pdf' %}">shrinking file sizes</a> to
+           <a href="{% url 'ocr_pdf' %}">making scans searchable</a> with OCR,
+           the goal is the same: the fastest path from "I need this done" to a
+           downloaded file.</p>
+
+        <h2>Privacy by default</h2>
+        <p>Files you upload are processed, delivered back to you, then deleted
+           automatically. We never ask for your documents to train models, never
+           sell data, and never keep files around "just in case". Read the details
+           in our <a href="{% url 'privacy_policy' %}">Privacy Policy</a>.</p>
+
+        <h2>Free and sustainable</h2>
+        <p>The core toolkit is free forever. We fund hosting and development
+           through unobtrusive advertising and an optional
+           <a href="{% url 'pricing' %}">pro tier</a> with larger limits and
+           priority processing.</p>
+
+        <h2>Open to feedback</h2>
+        <p>Found a bug or need a tool we don't have? Head to the
+           <a href="{% url 'contact' %}">contact page</a> - messages go straight
+           to the people who build the product.</p>
+    </div>
+</section>
+{% endblock %}

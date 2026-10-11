@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Contact PDFMaster - Get in Touch{% endblock %}
+{% block meta_description %}Contact the PDFMaster team with bug reports, feature requests or partnership inquiries. We usually reply within two business days.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container prose-page">
+        <h1>Contact us</h1>
+        <p>Questions, bug reports and feature requests all land in the same inbox
+           and are read by the people who actually build PDFMaster. We usually
+           reply within two business days.</p>
+
+        <h2>Email</h2>
+        <p><a href="mailto:support@pdfmaster.example">support@pdfmaster.example</a></p>
+
+        <h2>What to include</h2>
+        <ul>
+            <li>Which tool you were using (e.g. Compress PDF, OCR).</li>
+            <li>What you expected vs. what happened.</li>
+            <li>Your browser and OS - it saves a round trip.</li>
+            <li>The job ID shown on the result page, if there was an error.</li>
+        </ul>
+        <p class="form-hint">Please do <strong>not</strong> email sensitive documents;
+           attach files only if we ask for them first.</p>
+
+        <h2>Security issues</h2>
+        <p>For security reports, email
+           <a href="mailto:security@pdfmaster.example">security@pdfmaster.example</a>
+           and allow us 90 days to respond before any public disclosure.</p>
+    </div>
+</section>
+{% endblock %}

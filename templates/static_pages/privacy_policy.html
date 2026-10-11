@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy | PDFMaster{% endblock %}
+{% block meta_description %}How PDFMaster handles your data: uploaded files are processed and deleted automatically, we never sell your data, and advertising cookies are opt-in.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container prose-page">
+        <h1>Privacy Policy</h1>
+        <p class="form-hint">Last updated: 10 November 2026</p>
+
+        <h2>1. Summary</h2>
+        <p>PDFMaster is a free online PDF toolkit. The short version: files you
+           upload are processed to give you the result you asked for, downloaded by
+           you, and then deleted automatically. We do not sell personal data, and
+           we do not read your documents.</p>
+
+        <h2>2. Files you upload</h2>
+        <ul>
+            <li>Files are stored temporarily on the server for processing only.</li>
+            <li>They are removed automatically after processing or download.</li>
+            <li>Results are served through an unguessable job ID link.</li>
+            <li>Files are never shared with third parties and never used to train
+                models.</li>
+        </ul>
+
+        <h2>3. Information we collect</h2>
+        <ul>
+            <li><strong>Account data</strong> (optional): a username and password
+                if you register - nothing else is required.</li>
+            <li><strong>Technical logs</strong>: IP address, user agent and
+                timestamps written by the web server for security and abuse
+                prevention.</li>
+            <li><strong>Usage events</strong>: which tool was used and whether it
+                succeeded, kept in aggregate to prioritise fixes.</li>
+        </ul>
+
+        <h2>4. Cookies</h2>
+        <p>We use only a session cookie required for the site to function (login
+           state, CSRF protection, download links). Analytics and advertising
+           cookies are set only if you accept them via the cookie banner. See the
+           <a href="{% url 'cookie_policy' %}">Cookie Policy</a> for details.</p>
+
+        <h2>5. Advertising</h2>
+        <p>We may display ads served by Google AdSense. Google may use cookies to
+           serve ads based on your prior visits to this or other websites. You can
+           opt out of personalised advertising in Google's
+           <a href="https://adssettings.google.com/" rel="noopener">Ads Settings</a>.
+           Ads are disabled entirely until you consent where consent is required.</p>
+
+        <h2>6. Legal basis (GDPR)</h2>
+        <p>File processing is based on your explicit request (performance of a
+           contract/legitimate interest); cookies beyond strictly necessary ones
+           are based on consent, which you can withdraw at any time by clearing
+           site data in your browser.</p>
+
+        <h2>7. Retention</h2>
+        <p>Uploaded files and generated results are deleted automatically within
+           hours of use. Server logs are rotated and retained for up to 30 days.
+           Account records persist until you delete your account.</p>
+
+        <h2>8. Your rights</h2>
+        <p>You may request access to, correction of, or deletion of any personal
+           data we hold, and you may object to processing. Email
+           <a href="mailto:support@pdfmaster.example">support@pdfmaster.example</a>
+           and we will respond within 30 days.</p>
+
+        <h2>9. Children</h2>
+        <p>PDFMaster is not directed at children under 13 and we do not knowingly
+           collect their data.</p>
+
+        <h2>10. Changes</h2>
+        <p>Material changes will be announced on this page with an updated date.</p>
+
+        <h2>11. Contact</h2>
+        <p>Questions? <a href="{% url 'contact' %}">Contact us</a>.</p>
+    </div>
+</section>
+{% endblock %}

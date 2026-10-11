@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Cookie Policy | PDFMaster{% endblock %}
+{% block meta_description %}Which cookies PDFMaster sets: strictly necessary session cookies by default, and optional analytics/advertising cookies only after you consent.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container prose-page">
+        <h1>Cookie Policy</h1>
+        <p class="form-hint">Last updated: 10 November 2026</p>
+
+        <h2>1. Strictly necessary cookies</h2>
+        <p>These keep the site working and are always on:</p>
+        <ul>
+            <li><strong>sessionid</strong> - keeps you logged in.</li>
+            <li><strong>csrftoken</strong> - protects forms against cross-site
+                request forgery.</li>
+            <li><strong>download stash</strong> - temporary server-side state so
+                ZIP/extract results can be re-downloaded without re-uploading.</li>
+        </ul>
+
+        <h2>2. Optional cookies</h2>
+        <p>Analytics and advertising cookies (including Google AdSense) are set
+           <strong>only after you press "Accept"</strong> in the cookie banner.
+           Until then, no advertising or analytics cookies are stored.</p>
+
+        <h2>3. How long they live</h2>
+        <ul>
+            <li>Session cookies expire when you close the browser or log out.</li>
+            <li>Consent cookies last 6 months, after which we ask again.</li>
+            <li>Third-party cookies follow the third party's own schedule.</li>
+        </ul>
+
+        <h2>4. Managing cookies</h2>
+        <p>You can delete or block cookies in your browser settings at any time.
+           Blocking strictly necessary cookies will break login and downloads.</p>
+
+        <h2>5. Changes &amp; contact</h2>
+        <p>We will update this page if the cookies we use change. Questions go
+           through the <a href="{% url 'contact' %}">contact page</a>.</p>
+    </div>
+</section>
+{% endblock %}

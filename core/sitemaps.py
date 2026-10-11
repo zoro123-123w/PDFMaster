@@ -9,6 +9,8 @@ class StaticViewSitemap(Sitemap):
     def items(self):
         return [
             'home', 'tools_list', 'pricing', 'faq',
+            'about', 'contact', 'privacy_policy', 'terms_of_service',
+            'cookie_policy',
             'ai_tools', 'ai_study',
             'ai_summarize', 'ai_extract', 'ai_translate', 'ai_ask',
             'ai_study_quiz', 'ai_study_flashcards', 'ai_study_notes',
@@ -24,6 +26,7 @@ class StaticViewSitemap(Sitemap):
             'highlight_pdf', 'redact_pdf', 'organize_pdf',
             'protect_pdf', 'unlock_pdf', 'sign_pdf',
             'repair_pdf', 'ocr_pdf', 'scan_to_pdf',
+            'zip_compress', 'zip_extract', 'pdf_to_text',
         ]
 
     def location(self, item):
