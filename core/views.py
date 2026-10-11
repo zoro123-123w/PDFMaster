@@ -105,14 +105,13 @@ def ads_txt(request):
 
 
 def robots_txt(request):
-    """Dynamic robots.txt that always points to the correct sitemap URL
-    based on the request domain (handles both local and production).
+    """Dynamic robots.txt.
 
-    The sitemap URL always uses HTTPS since the production site is HTTPS-only.
+    The Sitemap line is built from settings.SITE_URL (the canonical origin
+    used by the SEO tags and the sitemap itself), never from the request host,
+    so a spoofed Host header cannot poison the advertised sitemap URL.
     """
-    sitemap_url = request.build_absolute_uri('/sitemap.xml')
-    if sitemap_url.startswith('http://'):
-        sitemap_url = 'https://' + sitemap_url[7:]
+    sitemap_url = f"{settings.SITE_URL}/sitemap.xml"
     content = (
         "User-agent: *\n"
         "Allow: /\n"
@@ -121,6 +120,7 @@ def robots_txt(request):
         "Disallow: /dashboard/\n"
         "Disallow: /media/\n"
         "Disallow: /static/\n"
+        "Disallow: /download/\n"
         "Disallow: /tools/download/\n"
         "Disallow: /ai-tools/request/\n"
         "\n"

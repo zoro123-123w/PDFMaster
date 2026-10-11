@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.test import override_settings
@@ -43,12 +44,26 @@ class CoreViewsTestCase(TestCase):
                 self.assertNotEqual(stripped, 'Disallow: /',
                     f'Found global Disallow: / which blocks the entire site')
 
-    @override_settings(ALLOWED_HOSTS=['*'])
+    @override_settings(ALLOWED_HOSTS=['*'], SITE_URL='https://example.com')
     def test_robots_txt_contains_sitemap(self):
-        """Sitemap URL must be present and use HTTPS."""
+        """Sitemap URL must come from SITE_URL and use HTTPS."""
         response = self.client.get('/robots.txt', HTTP_HOST='example.com')
         content = response.content.decode()
         self.assertIn('Sitemap: https://example.com/sitemap.xml', content)
+
+    def test_robots_txt_sitemap_ignores_spoofed_host(self):
+        """The Sitemap line must be built from SITE_URL, not the Host header."""
+        response = self.client.get('/robots.txt', HTTP_HOST='evil.example')
+        content = response.content.decode()
+        self.assertIn(
+            f'Sitemap: {settings.SITE_URL}/sitemap.xml', content)
+        self.assertNotIn('evil.example', content)
+
+    def test_robots_txt_disallows_download_paths(self):
+        response = self.client.get('/robots.txt')
+        content = response.content.decode()
+        self.assertIn('Disallow: /download/', content)
+        self.assertIn('Disallow: /tools/download/', content)
 
     @override_settings(ALLOWED_HOSTS=['*'])
     def test_robots_txt_production_sitemap(self):
