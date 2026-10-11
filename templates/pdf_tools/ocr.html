@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}OCR PDF - Make Scanned PDFs Searchable | PDF Master{% endblock %}
+{% block meta_description %}OCR a scanned PDF into a searchable PDF or plain text. Supports English and Urdu, runs page by page to protect server memory.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">🔍 OCR PDF</h1>
+        <p class="page-subtitle">Turn a scanned or image-only PDF into a searchable
+            PDF, or extract the text as a TXT file.</p>
+
+        {% if not tesseract_ok %}
+        <div class="message message-error">
+            <strong>OCR is not available on this server.</strong>
+            Tesseract is not installed, so OCR cannot run right now.
+        </div>
+        {% endif %}
+
+        {% if result %}
+        {# ---------- Result screen ---------- #}
+        <div class="result-panel">
+            <h2 class="result-title">✅ OCR finished</h2>
+            <p class="result-subtitle">{{ result.filename }} is ready to download.</p>
+            <div class="result-actions">
+                {% if result.pdf %}
+                <a class="btn btn-primary btn-large ocr-download"
+                   href="{% url 'download_file' result.pdf %}">⬇️ Download searchable PDF</a>
+                {% endif %}
+                {% if result.txt %}
+                <a class="btn btn-secondary btn-large ocr-download"
+                   href="{% url 'download_file' result.txt %}">⬇️ Download TXT</a>
+                {% endif %}
+            </div>
+            <p class="form-hint">Files are deleted automatically after download.
+                <a href="{% url 'ocr_pdf' %}">OCR another file</a>.</p>
+        </div>
+        {% else %}
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="toolForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">Upload scanned PDF</label>
+                    <div class="upload-area" id="dropZone">
+                        <input type="file" name="file" id="id_file" accept=".pdf"
+                               style="display:none" onchange="updateFileName(this)">
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">📄</span>
+                            <h3>Drop your scanned PDF here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                            <p class="upload-hint">Max 20 MB and 30 pages &middot; PDF only</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# ---------- Language selection ---------- #}
+                {# Rendered field by field rather than with a generic loop over
+                   config_form, because the two language dropdowns are grouped
+                   inside one panel that shares a single search box. The select
+                   options come from `tesseract --list-langs` on the server, so
+                   only genuinely installed packs can ever be submitted. #}
+                <div class="form-group">
+                    <label for="{{ config_form.pages.id_for_label }}">{{ config_form.pages.label }}</label>
+                    {{ config_form.pages }}
+                    {% if config_form.pages.help_text %}<p class="form-hint">{{ config_form.pages.help_text }}</p>{% endif %}
+                    {% if config_form.pages.errors %}<div class="message message-error">{{ config_form.pages.errors }}</div>{% endif %}
+                </div>
+
+                <div class="lang-picker">
+                    <label for="langSearch">Find a language</label>
+                    <input type="text" id="langSearch" class="form-input" autocomplete="off"
+                           placeholder="Type to filter, e.g. urdu, arabic, french…">
+                    <p class="form-hint" id="langSearchHint">
+                        {{ ocr_lang_count }} language pack{{ ocr_lang_count|pluralize }}
+                        installed on this server.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="{{ config_form.lang.id_for_label }}">{{ config_form.lang.label }}</label>
+                        {{ config_form.lang }}
+                        {% if config_form.lang.errors %}<div class="message message-error">{{ config_form.lang.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ config_form.lang2.id_for_label }}">{{ config_form.lang2.label }}</label>
+                        {{ config_form.lang2 }}
+                        {% if config_form.lang2.help_text %}<p class="form-hint">{{ config_form.lang2.help_text }}</p>{% endif %}
+                        {% if config_form.lang2.errors %}<div class="message message-error">{{ config_form.lang2.errors }}</div>{% endif %}
+                    </div>
+                    <p class="form-hint">At most <strong>2 languages</strong> per document,
+                       because each extra pack multiplies memory and processing time.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ config_form.output.id_for_label }}">{{ config_form.output.label }}</label>
+                    {{ config_form.output }}
+                    {% if config_form.output.errors %}<div class="message message-error">{{ config_form.output.errors }}</div>{% endif %}
+                </div>
+
+                {% if config_form.non_field_errors %}
+                    <div class="message message-error">{{ config_form.non_field_errors }}</div>
+                {% endif %}
+
+                {% if form.errors %}
+                    {% for field in form %}
+                        {% if field.errors %}<div class="message message-error">{{ field.errors }}</div>{% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                {# ---------- Progress indicator (hidden until submit) ---------- #}
+                <div class="ocr-progress" id="ocrProgress" hidden>
+                    <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+                    <p class="progress-text" id="progressText">Preparing pages…</p>
+                    <p class="form-hint">OCR runs one page at a time — please keep this tab open.</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large" id="ocrSubmit">
+                        {{ submit_label }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# ---------- SEO / help text ---------- #}
+        <div class="seo-text">
+            <h2>What does OCR do?</h2>
+            <p>Optical Character Recognition reads the pixels of a scanned page and
+               writes the recognised characters back into the PDF as an invisible text
+               layer. The page looks identical, but you can now search, select and
+               copy the words.</p>
+
+            <h3>How to use it in 3 steps</h3>
+            <ol>
+                <li>Upload your scanned PDF (max 20 MB and 30 pages).</li>
+                <li>Choose the document language and what to download.</li>
+                <li>Press <strong>Start OCR</strong>, then download the searchable PDF or the TXT file.</li>
+            </ol>
+
+            <h3>Frequently asked questions</h3>
+            <p><strong>Which languages are supported?</strong>
+               {% if ocr_lang_count %}<strong>{{ ocr_lang_count }}</strong> language packs are installed on this
+               server. Pick one, or two for a mixed-language document. English is the default.{% else %}
+               English and Urdu.{% endif %}</p>
+            <p><strong>Can I use two languages at once?</strong> Yes — set a second language for documents
+               that mix scripts (for example English with Urdu). Only two are allowed per run, because each
+               extra pack multiplies memory and processing time.</p>
+            <p><strong>Why is there a page limit?</strong> OCR is memory hungry. Pages are
+               processed one at a time at 200 DPI and capped at 30 pages so the server
+               does not run out of memory.</p>
+            <p><strong>My Urdu text looks reordered.</strong> Arabic-script text is stored in
+               the correct reading order, but some PDF viewers re-render the shaped forms
+               differently. The TXT download is the most reliable way to reuse the text.</p>
+            <p><strong>Are my files kept?</strong> No. Uploads and results are deleted after
+               download or automatically afterwards.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+    // ---------- Language search box ----------
+    // tesseract-ocr-all installs ~130 packs, which makes a plain <select> painful
+    // to use. Typing hides the options that do not match in BOTH dropdowns. The
+    // already-selected value is always restored so filtering can never silently
+    // change what the user chose, and a "no matches" hint replaces an empty list.
+    var search = document.getElementById('langSearch');
+    var selects = [document.getElementById('id_lang'),
+                   document.getElementById('id_lang2')].filter(Boolean);
+
+    if (search && selects.length) {
+        search.addEventListener('input', function () {
+            var term = search.value.trim().toLowerCase();
+            var visible = 0;
+
+            selects.forEach(function (select) {
+                var kept = select.value;
+                Array.prototype.forEach.call(select.options, function (opt) {
+                    if (!opt.value) return;   // never hide the blank option
+                    var haystack = (opt.text + ' ' + opt.value).toLowerCase();
+                    var show = !term || haystack.indexOf(term) !== -1;
+                    opt.hidden = !show;
+                    opt.disabled = !show;
+                    if (show) visible++;
+                });
+                select.value = kept;          // keep the user's choice
+            });
+
+            var hint = document.getElementById('langSearchHint');
+            if (hint) {
+                hint.textContent = term
+                    ? (visible ? visible + ' matching language' + (visible === 1 ? '' : 's')
+                               : 'No language matches "' + search.value + '".')
+                    : '{{ ocr_lang_count }} language pack{{ ocr_lang_count|pluralize }} installed on this server.';
+            }
+        });
+    }
+
+
+    // Show a progress indicator while the server works. The page navigates on
+    // submit, so the bar is an honest "we are working" crawl rather than a fake
+    // percentage - it never claims 100% before the job is actually done.
+    var form = document.getElementById("toolForm");
+    var progress = document.getElementById("ocrProgress");
+    var bar = document.getElementById("progressBar");
+    var text = document.getElementById("progressText");
+    if (!form || !progress) return;
+
+    var steps = ["Preparing pages...", "Reading page 1...", "Recognising text...",
+                 "Building searchable PDF...", "Almost done..."];
+    var idx = 0;
+
+    form.addEventListener("submit", function () {
+        progress.hidden = false;
+        progress.scrollIntoView({ behavior: "smooth", block: "center" });
+        var pct = 5;
+        var timer = setInterval(function () {
+            pct = Math.min(pct + 1.2, 92);
+            if (bar) bar.style.width = pct + "%";
+            if (idx < steps.length - 1 && pct > (idx + 1) * 18) idx++;
+            if (text) text.textContent = steps[idx];
+        }, 700);
+        // Safety net: still here after 4 minutes means a very large scan.
+        setTimeout(function () {
+            clearInterval(timer);
+            if (text) text.textContent = "Still working - large scans can take a few minutes.";
+        }, 240000);
+    });
+})();
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.ocr-progress { margin: 1.5rem 0; }
+.progress-track { height: 10px; background: var(--border, #e2e8f0); border-radius: 999px; overflow: hidden; }
+.progress-bar { height: 100%; width: 5%; background: var(--primary, #e63946); transition: width .6s ease; }
+.lang-picker {
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.lang-picker > label { display: block; font-weight: 600; margin-bottom: .4rem; }
+.progress-text { margin-top: .5rem; font-weight: 600; }
+.result-panel { background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 2rem; text-align: center; }
+.result-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0 1rem; }
+.seo-text { margin-top: 3rem; max-width: 46rem; }
+.seo-text h2 { margin-top: 2rem; }
+.seo-text h3 { margin-top: 1.5rem; }
+</style>
+{% endblock %}

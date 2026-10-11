@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}ZIP Extractor - Unzip Files Online | PDF Master{% endblock %}
+{% block meta_description %}List and extract files from a ZIP archive online. Download single files or everything at once, with safe extraction. Free, no sign-up.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">📦 ZIP Extractor</h1>
+        <p class="page-subtitle">See what is inside a ZIP and download single files
+            or the whole archive.</p>
+
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="toolForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_file">ZIP file</label>
+                    <div class="upload-area" id="dropZone">
+                        {{ form.file }}
+                        <div class="upload-content" onclick="document.getElementById('id_file').click()">
+                            <span class="upload-icon">📦</span>
+                            <h3>Drop your .zip here</h3>
+                            <p>or click to choose a file</p>
+                            <p id="fileName" class="file-name"></p>
+                            <p class="upload-hint">.zip archives supported</p>
+                        </div>
+                    </div>
+                    {% if form.file.errors %}<div class="message message-error">{{ form.file.errors }}</div>{% endif %}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">List Contents</button>
+                </div>
+            </form>
+        </div>
+
+        {% if listing %}
+        <div class="result-panel" style="margin-top:2rem;">
+            <h2 class="result-title">📄 {{ listing.count }} file{{ listing.count|pluralize }} in {{ zip_name }}</h2>
+            <div class="size-compare">
+                <div class="size-item">
+                    <span class="size-label">Archive</span>
+                    <span class="size-value">{{ listing.compressed|filesizeformat }}</span>
+                </div>
+                <div class="size-item">
+                    <span class="size-label">Uncompressed</span>
+                    <span class="size-value">{{ listing.uncompressed|filesizeformat }}</span>
+                </div>
+            </div>
+            <ul class="zip-list">
+                {% for entry in listing.entries %}
+                <li class="zip-item">
+                    <span class="zip-name">{{ entry.name }}</span>
+                    <span class="zip-size">{{ entry.size|filesizeformat }}</span>
+                    <form method="post" class="zip-dl-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="token" value="{{ token }}">
+                        <input type="hidden" name="download_one" value="{{ entry.name }}">
+                        <button type="submit" class="btn btn-outline btn-small">Download</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="form-hint">Single-file buttons download straight from the
+               archive, so you can grab several in a row.</p>
+            <form method="post" id="downloadAllForm">
+                {% csrf_token %}
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="download_all" value="1">
+                <div class="result-actions">
+                    <button type="submit" class="btn btn-primary btn-large ocr-download">
+                        ⬇️ Download all as a new ZIP
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="seo-text">
+            <h2>Safe by default</h2>
+            <p>We block path-traversal ("zip-slip") entries, refuse archives that
+               look like zip bombs, cap the number of files, and sanitise every
+               filename before download.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.size-compare { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin: 1.25rem 0; flex-wrap: wrap; }
+.size-item { display: flex; flex-direction: column; }
+.size-label { font-size: .8rem; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: .04em; }
+.size-value { font-size: 1.4rem; font-weight: 700; }
+.result-panel { background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 2rem; }
+.zip-list { list-style: none; padding: 0; margin: 1rem 0; text-align: left; }
+.zip-item { display: flex; align-items: center; gap: 1rem; padding: .6rem .8rem; border-bottom: 1px solid var(--border, #e2e8f0); }
+.zip-name { flex: 1; word-break: break-all; }
+.zip-size { color: var(--muted, #64748b); white-space: nowrap; }
+.zip-dl-form { margin: 0; }
+.btn-small { padding: .3rem .8rem; font-size: .85rem; }
+.seo-text { margin-top: 2rem; max-width: 46rem; }
+</style>
+{% endblock %}

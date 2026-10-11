@@ -152,6 +152,11 @@ class ComprehensiveIntegrationTest(TestCase):
     def _make_img_pdf(self):
         return make_image_pdf()
 
+    def _make_pdf_file(self):
+        """Write a real PDF to disk and return its path (services take paths)."""
+        from pdf_tools.views import save_uploaded_file
+        return save_uploaded_file(self._make_pdf())
+
     # ================================================================
     # A. PDF ORGANIZE TOOLS
     # ================================================================
@@ -434,9 +439,45 @@ class ComprehensiveIntegrationTest(TestCase):
         """OCR a PDF (may degrade gracefully if Tesseract not available)."""
         pdf = self._make_pdf()
         response = self.client.post(reverse('ocr_pdf'), {
-            'file': pdf, 'pages': '', 'lang': 'eng'
+            'file': pdf, 'pages': '', 'lang': 'eng', 'lang2': '',
+            'output': 'both'
         })
         self.assertIn(response.status_code, [200, 302])
+
+    def test_ocr_two_languages(self):
+        """Two dropdowns combine into one Tesseract lang string."""
+        from pdf_tools.forms import OcrForm
+        form = OcrForm({'lang': 'eng', 'lang2': 'urd', 'pages': '',
+                        'output': 'both'},
+                       available_languages=['eng', 'urd'])
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['lang'], 'eng+urd')
+
+    def test_ocr_rejects_duplicate_language(self):
+        """Selecting the same pack twice is a mistake, not two languages."""
+        from pdf_tools.forms import OcrForm
+        form = OcrForm({'lang': 'urd', 'lang2': 'urd', 'pages': '',
+                        'output': 'both'},
+                       available_languages=['eng', 'urd'])
+        self.assertFalse(form.is_valid())
+
+    def test_ocr_rejects_uninstalled_language(self):
+        """A code that is not in tesseract --list-langs must be rejected."""
+        from pdf_tools.forms import OcrForm
+        form = OcrForm({'lang': 'zz_nope', 'lang2': '', 'pages': '',
+                        'output': 'both'},
+                       available_languages=['eng', 'urd'])
+        self.assertFalse(form.is_valid())
+        self.assertIn('lang', form.errors)
+
+    def test_ocr_language_cap(self):
+        """The service refuses more than OCR_MAX_LANGS packs in one run."""
+        from pdf_tools.services.ocr import (
+            OCRProcessingError, OCR_MAX_LANGS, ocr_pdf)
+        too_many = '+'.join(['eng', 'urd', 'fra', 'deu'][:OCR_MAX_LANGS + 1])
+        with self.assertRaises(OCRProcessingError):
+            ocr_pdf(self._make_pdf_file(),
+                    {'pages': '', 'lang': too_many, 'txt': False})
 
     def test_scan_to_pdf(self):
         """Scan to searchable PDF."""

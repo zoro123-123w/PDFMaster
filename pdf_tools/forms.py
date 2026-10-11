@@ -1,4 +1,8 @@
+import re
+
 from django import forms
+
+from .services.ocr import language_label, normalize_langs
 
 
 class MultipleFileInput(forms.FileInput):
@@ -37,6 +41,22 @@ class SinglePDFUploadForm(forms.Form):
         }),
         required=True
     )
+
+
+class CompressPdfForm(SinglePDFUploadForm):
+    """PDF upload plus a compression-quality selector."""
+
+    QUALITY_CHOICES = (
+        ('low', 'Light - fastest, keeps images as-is'),
+        ('medium', 'Balanced - recompress images (recommended)'),
+        ('high', 'Strong - smallest file, slight quality loss'),
+    )
+    quality = forms.ChoiceField(
+        choices=QUALITY_CHOICES,
+        initial='medium',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text='Stronger compression produces smaller files but may '
+                  'visibly reduce image quality.')
 
 
 class ImageUploadForm(forms.Form):
@@ -273,14 +293,133 @@ class OrganizeForm(forms.Form):
 
 
 class OcrForm(forms.Form):
+    """OCR options: which pages, which languages, and what to download.
+
+    Language choices are NOT hardcoded - they are injected by the view from
+    ``tesseract --list-langs`` on the running server, so the dropdown can never
+    offer a pack that is not installed. Two dropdowns are provided (primary +
+    optional second language) because a mixed document (e.g. English text with
+    Urdu paragraphs) needs both, and the service caps the combination at
+    ``OCR_MAX_LANGS``.
+    """
+    OUTPUT_CHOICES = [
+        ('both', 'Searchable PDF + TXT'),
+        ('pdf', 'Searchable PDF only'),
+        ('txt', 'Plain TXT only'),
+    ]
+
+    def __init__(self, *args, available_languages=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Fall back to English so the form still renders (and still works) if
+        # the language probe failed. Unknown codes are kept as-is by the view.
+        installed = [code for code in (available_languages or []) if code]
+        if 'eng' not in installed:
+            installed.insert(0, 'eng')
+        choices = [(code, language_label(code)) for code in installed]
+
+        self.fields['lang'].choices = choices
+        self.fields['lang2'].choices = choices
+        self.fields['lang2'].required = False
+        # Default to English only when it is genuinely installed.
+        self.fields['lang'].initial = 'eng' if 'eng' in installed else installed[0]
+
     pages = forms.CharField(required=False, label='Pages (optional)',
-                            help_text='e.g. 1-3,5 (leave empty for all pages)')
-    lang = forms.CharField(initial='eng', label='Language code', help_text='Tesseract language code, e.g. eng')
+                            help_text='e.g. 1-3,5 (leave empty for all pages)',
+                            widget=forms.TextInput(attrs={
+                                'class': 'form-input',
+                                'placeholder': 'Leave empty for all pages'}))
+    # Both are plain ChoiceFields whose choices are set in __init__; Django then
+    # rejects any code that is not in the list, which is the validation we want.
+    lang = forms.ChoiceField(label='Primary language')
+    lang2 = forms.ChoiceField(label='Second language (optional)',
+                              help_text='Use this only if the document mixes two '
+                                        'languages, e.g. English + Urdu.')
+    output = forms.ChoiceField(choices=OUTPUT_CHOICES, initial='both',
+                               label='Download as')
+
+    def clean_lang2(self):
+        """Treat an empty second selection as 'no second language'."""
+        return (self.cleaned_data.get('lang2') or '').strip()
+
+    def clean(self):
+        """Combine the two selections and apply the cross-field rules."""
+        cleaned = super().clean()
+        primary = (cleaned.get('lang') or '').strip()
+        second = (cleaned.get('lang2') or '').strip()
+
+        if second and second == primary:
+            # Selecting the same pack twice is a mistake, not two languages.
+            raise forms.ValidationError(
+                'The second language is the same as the first. Choose a different '
+                'one, or leave it empty.')
+
+        combined = normalize_langs(primary, second)
+        cleaned['lang'] = combined
+        return cleaned
+
+    def clean_pages(self):
+        """Keep the range numeric; the service enforces the hard page cap."""
+        value = (self.cleaned_data.get('pages') or '').strip()
+        if value:
+            for part in value.split(','):
+                part = part.strip()
+                if not part:
+                    continue
+                if not part.replace('-', '').isdigit():
+                    raise forms.ValidationError(
+                        'Enter page numbers only, e.g. 1-3,5')
+        return value
+
+
+class ZipCompressForm(forms.Form):
+    """Multiple files + compression level + optional zip name."""
+    LEVEL_CHOICES = [
+        ('fast', 'Fast (largest, quickest)'),
+        ('normal', 'Normal (balanced)'),
+        ('maximum', 'Maximum (smallest, slowest)'),
+    ]
+    files = MultipleFileField(
+        required=True,
+        label='Files to compress',
+        widget=MultipleFileInput(attrs={
+            'class': 'file-input', 'accept': '*/*',
+            'style': 'display:none', 'onchange': 'updateFileName(this)'}),
+        help_text='Add as many files as you like (total capped at 100 MB).')
+    level = forms.ChoiceField(choices=LEVEL_CHOICES, initial='normal',
+                              label='Compression level')
+    zip_name = forms.CharField(
+        required=False, max_length=120, label='Archive name (optional)',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'my-files (leave blank for a default name)'}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['pages'].widget.attrs.update({'class': 'form-input'})
-        self.fields['lang'].widget.attrs.update({'class': 'form-input'})
+        self.fields['level'].widget.attrs.update({'class': 'form-select'})
+
+    def clean_zip_name(self):
+        name = (self.cleaned_data.get('zip_name') or '').strip()
+        # Only allow a safe single-path name; the service sanitises again.
+        if name and not re.match(r'^[A-Za-z0-9._\- ]+$', name):
+            raise forms.ValidationError(
+                'Use only letters, numbers, spaces, dots, dashes or underscores.')
+        return name
+
+
+class ZipExtractForm(forms.Form):
+    """A single .zip to extract."""
+    file = forms.FileField(
+        required=True, label='ZIP file',
+        widget=forms.FileInput(attrs={
+            'class': 'file-input', 'accept': '.zip,application/zip'}),
+        help_text='Upload a .zip archive to see and extract its contents.')
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+        if f and not f.name.lower().endswith('.zip'):
+            raise forms.ValidationError('That does not look like a .zip file.')
+        return f
 
 
 class SignatureForm(forms.Form):

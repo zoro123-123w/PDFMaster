@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}ZIP Compressor - Create a ZIP Online | PDF Master{% endblock %}
+{% block meta_description %}Compress multiple files into a single ZIP online. Choose fast, normal or maximum compression and see the size saved. Free, no sign-up.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">🗜️ ZIP Compressor</h1>
+        <p class="page-subtitle">Combine several files into one ZIP and see how much
+            space you saved.</p>
+
+        {% if result %}
+        <div class="result-panel">
+            <h2 class="result-title">✅ Archive ready</h2>
+            <p class="result-subtitle">{{ result.file_count }} file{{ result.file_count|pluralize }}
+               compressed into <strong>{{ result.zip_name }}</strong>.</p>
+            <div class="size-compare">
+                <div class="size-item">
+                    <span class="size-label">Original</span>
+                    <span class="size-value">{{ result.original_size|filesizeformat }}</span>
+                </div>
+                <div class="size-arrow">→</div>
+                <div class="size-item">
+                    <span class="size-label">Zipped</span>
+                    <span class="size-value">{{ result.zipped_size|filesizeformat }}</span>
+                </div>
+            </div>
+            <div class="result-actions">
+                <a class="btn btn-primary btn-large ocr-download" href="{{ result.download_url }}">
+                    ⬇️ Download {{ result.zip_name }}
+                </a>
+            </div>
+            <p class="form-hint">The download is deleted automatically after you get it.
+                <a href="{% url 'zip_compress' %}">Compress more files</a>.</p>
+        </div>
+        {% else %}
+        <div class="tool-container">
+            <form method="post" enctype="multipart/form-data" id="toolForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_files">Files to compress</label>
+                    <div class="upload-area" id="dropZone">
+                        {{ form.files }}
+                        <div class="upload-content" onclick="document.getElementById('id_files').click()">
+                            <span class="upload-icon">📦</span>
+                            <h3>Drop your files here</h3>
+                            <p>or click to choose one or more files</p>
+                            <p id="fileName" class="file-name"></p>
+                            <p class="upload-hint">Any file type &middot; max 100 MB total</p>
+                        </div>
+                    </div>
+                    {% if form.files.errors %}<div class="message message-error">{{ form.files.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_level">Compression level</label>
+                    {{ form.level }}
+                    <p class="form-hint">Maximum gives the smallest file but takes longer.</p>
+                </div>
+                <div class="form-group">
+                    <label for="id_zip_name">Archive name (optional)</label>
+                    {{ form.zip_name }}
+                    {% if form.zip_name.errors %}<div class="message message-error">{{ form.zip_name.errors }}</div>{% endif %}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Create ZIP</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.size-compare { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin: 1.5rem 0; flex-wrap: wrap; }
+.size-item { display: flex; flex-direction: column; }
+.size-label { font-size: .85rem; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: .04em; }
+.size-value { font-size: 1.6rem; font-weight: 700; }
+.size-arrow { font-size: 1.8rem; }
+.result-panel { background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 2rem; text-align: center; }
+.result-actions { margin: 1.5rem 0 1rem; }
+</style>
+{% endblock %}

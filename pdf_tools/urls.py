@@ -52,5 +52,12 @@ urlpatterns = [
     path('ocr/', views.ocr_pdf_view, name='ocr_pdf'),
     path('scan-to-pdf/', views.scan_to_pdf, name='scan_to_pdf'),
 
+    # --- ZIP tools ---
+    path('zip-compress/', views.zip_compress, name='zip_compress'),
+    path('zip-extract/', views.zip_extract, name='zip_extract'),
+
+    # --- PDF Extract text ---
+    path('pdf-to-text/', views.pdf_to_text, name='pdf_to_text'),
+
     path('download/<uuid:job_id>/', views.download_file, name='download_file'),
 ]

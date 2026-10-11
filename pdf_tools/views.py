@@ -1,5 +1,7 @@
 import os
 import uuid
+import shutil
+import zipfile
 import logging
 from django import forms
 from django.forms import Form
@@ -19,6 +21,7 @@ from .forms import (
     PageNumberForm, OrganizeForm, OcrForm, SignatureForm,
     AddTextForm, AddImageForm, AnnotateForm, HighlightForm,
     PPTUploadForm, ImageUploadAnyForm,
+    ZipCompressForm, ZipExtractForm, CompressPdfForm,
 )
 from .services.merge import merge_pdf_service
 from .services.split import split_pdf_service
@@ -43,12 +46,21 @@ from .services.edit import (
     add_image_to_pdf as _add_image_to_pdf,
     annotate_pdf as _annotate_pdf, highlight_pdf as _highlight_pdf,
 )
-from .services.ocr import ocr_pdf, OCRNotConfiguredError, tesseract_available
+from .services.ocr import (
+    ocr_pdf, OCRNotConfiguredError, OCRProcessingError,
+    tesseract_available, tesseract_languages,
+)
 from .services.security import (
     protect_pdf as _protect_pdf, unlock_pdf as _unlock_pdf, redact_pdf as _redact_pdf,
 )
 from .services.signature import sign_pdf, SignatureError, decode_signature_image
 from .services.utils import create_output_path
+from .services.zip_tools import (
+    ZipSecurityError, LEVELS as ZIP_LEVELS,
+    compress_files, list_zip_contents, extract_zip, sanitize_filename,
+    ZIP_MAX_TOTAL_SIZE, ZIP_MAX_FILES,
+)
+from .services.pdf_to_text import pdf_to_text_service
 
 
 logger = logging.getLogger(__name__)
@@ -219,12 +231,22 @@ PDF_TOOL_CATEGORIES = [
         ],
     },
     {
+        'name': 'ZIP Tools',
+        'slug': 'zip',
+        'description': 'Compress files into a ZIP, or extract an existing archive',
+        'tools': [
+            {'name': 'ZIP Compressor', 'url': 'zip_compress', 'description': 'Compress multiple files into one .zip with size savings', 'icon': '🗜️'},
+            {'name': 'ZIP Extractor', 'url': 'zip_extract', 'description': 'List and extract files from a .zip archive safely', 'icon': '📦'},
+        ],
+    },
+    {
         'name': 'PDF OCR',
         'slug': 'ocr',
         'description': 'Recognize text in scanned PDFs',
         'tools': [
             {'name': 'OCR PDF', 'url': 'ocr_pdf', 'description': 'Make scanned PDFs searchable', 'icon': '👁️'},
             {'name': 'Scan to Searchable PDF', 'url': 'scan_to_pdf', 'description': 'Convert images to searchable PDF', 'icon': '📸'},
+            {'name': 'PDF to Text', 'url': 'pdf_to_text', 'description': 'Extract the text from a PDF into a .txt file', 'icon': '📝'},
         ],
     },
 ]
@@ -326,8 +348,13 @@ def split_pdf(request):
 
 
 def compress_pdf(request):
+    """Compress an uploaded PDF at the chosen quality level.
+
+    ``quality`` maps to ``compress_pdf_service`` presets (low/medium/high). The
+    result panel reports original size, compressed size, and the reduction.
+    """
     if request.method == 'POST':
-        form = SinglePDFUploadForm(request.POST, request.FILES)
+        form = CompressPdfForm(request.POST, request.FILES)
         if form.is_valid():
             f = request.FILES['file']
             valid, err = validate_pdf(f)
@@ -336,8 +363,9 @@ def compress_pdf(request):
                 return render(request, 'pdf_tools/compress.html', {'form': form})
             file_path = save_uploaded_file(f)
             original_size = os.path.getsize(file_path)
+            quality = form.cleaned_data.get('quality') or 'medium'
             try:
-                output_path = compress_pdf_service(file_path)
+                output_path = compress_pdf_service(file_path, quality=quality)
                 compressed_size = os.path.getsize(output_path)
                 ratio = ((original_size - compressed_size) / original_size) * 100 if original_size > 0 else 0
                 job = ProcessingJob.objects.create(
@@ -357,6 +385,7 @@ def compress_pdf(request):
                     'original_size': original_size,
                     'compressed_size': compressed_size,
                     'ratio': ratio,
+                    'quality': quality,
                     'job_id': job.id,
                 })
             except Exception:
@@ -367,7 +396,7 @@ def compress_pdf(request):
                 except OSError:
                     pass
     else:
-        form = SinglePDFUploadForm()
+        form = CompressPdfForm()
     return render(request, 'pdf_tools/compress.html', {'form': form})
 
 
@@ -1049,9 +1078,102 @@ def repair_pdf(request):
 # --------------------------------------------------------------------------- #
 
 def ocr_pdf_view(request):
-    return _handle_pdf_config_tool(
-        request, 'ocr_pdf', 'OCR PDF', OcrForm, ocr_pdf,
-        '.pdf', 'pdf_tools/config_form.html')
+    """OCR a scanned PDF into a searchable PDF and/or a plain TXT file.
+
+    Handled explicitly rather than through ``_handle_pdf_config_tool`` because
+    ``ocr_pdf`` returns two output files and we want to surface the real OCR
+    errors (missing language pack, timeout, out of memory) as clear messages.
+    """
+    upload_form = SinglePDFUploadForm(
+        data=request.POST, files=request.FILES) if request.method == 'POST' \
+        else SinglePDFUploadForm()
+
+    # Build the dropdowns from the packs actually installed on THIS server, so
+    # the UI can never offer a language that would fail at OCR time.
+    installed_languages = tesseract_languages()
+    config_form = OcrForm(
+        request.POST if request.method == 'POST' else None,
+        available_languages=installed_languages)
+
+    template = 'pdf_tools/ocr.html'
+    context = {
+        'form': upload_form,
+        'config_form': config_form,
+        'tool_name': 'OCR PDF',
+        'tool_subtitle': 'Make a scanned PDF searchable, or extract its text.',
+        'submit_label': 'Start OCR',
+        'file_accept': '.pdf',
+        'tesseract_ok': tesseract_available(),
+        'ocr_languages': sorted(installed_languages),
+        'ocr_lang_count': len(installed_languages),
+    }
+
+    if request.method == 'POST' and upload_form.is_valid():
+        if not config_form.is_valid():
+            return render(request, template, context)
+        f = request.FILES['file']
+        valid, err = validate_pdf(f)
+        if not valid:
+            messages.error(request, err)
+            return render(request, template, context)
+
+        file_path = save_uploaded_file(f)
+        try:
+            data = config_form.cleaned_data
+            want_txt = data.get('output') in ('both', 'txt')
+            pdf_path, txt_path = ocr_pdf(
+                file_path,
+                {'pages': data.get('pages', ''),
+                 'lang': data.get('lang', 'eng'),
+                 'txt': want_txt})
+
+            base = os.path.splitext(f.name)[0]
+            job_ids = {}
+            if pdf_path:
+                job_ids['pdf'] = ProcessingJob.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    tool_name='ocr_pdf',
+                    original_filename=f.name,
+                    status='COMPLETED',
+                    completed_at=timezone.now(),
+                    output_file=pdf_path,
+                    output_filename=base + '_searchable.pdf',
+                ).id
+            if txt_path:
+                job_ids['txt'] = ProcessingJob.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    tool_name='ocr_pdf',
+                    original_filename=f.name,
+                    status='COMPLETED',
+                    completed_at=timezone.now(),
+                    output_file=txt_path,
+                    output_filename=base + '_text.txt',
+                ).id
+
+            # Pass ids as strings so the template can build download URLs.
+            context['result'] = {
+                'pdf': str(job_ids['pdf']) if 'pdf' in job_ids else None,
+                'txt': str(job_ids['txt']) if 'txt' in job_ids else None,
+                'filename': f.name,
+            }
+            return render(request, template, context)
+        except OCRNotConfiguredError as e:
+            messages.error(request, str(e))
+        except OCRProcessingError as e:
+            messages.error(request, str(e))
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception:
+            logger.exception('OCR failed')
+            messages.error(request,
+                           'OCR failed on this file. Please try a clearer scan '
+                           'or a smaller file.')
+        finally:
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+    return render(request, template, context)
 
 
 def scan_to_pdf(request):
@@ -1090,7 +1212,8 @@ def scan_to_pdf(request):
                                'upload_icon': '📸', 'drop_text': 'Drop your images here',
                                'hint_text': 'JPG, PNG, WebP supported',
                                'submit_label': 'Scan to Searchable PDF'})
-            output_path = ocr_pdf(temp_pdf, {'pages': '', 'lang': 'eng'})
+            output_path, _txt_path = ocr_pdf(
+                temp_pdf, {'pages': '', 'lang': 'eng', 'txt': False})
             output_filename = os.path.splitext(files[0].name)[0] + '.pdf'
             job = ProcessingJob.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -1122,3 +1245,204 @@ def scan_to_pdf(request):
                    'upload_icon': '📸', 'drop_text': 'Drop your images here',
                    'hint_text': 'JPG, PNG, WebP supported',
                    'submit_label': 'Scan to Searchable PDF'})
+
+
+def pdf_to_text(request):
+    """Extract the existing text layer of a PDF into a .txt download."""
+    context = {
+        'tool_name': 'PDF to Text',
+        'tool_subtitle': 'Pull the text out of a PDF into a plain .txt file.',
+        'submit_label': 'Extract Text',
+        'file_accept': '.pdf',
+        'form': SinglePDFUploadForm(),
+    }
+    if request.method == 'POST':
+        form = SinglePDFUploadForm(request.POST, request.FILES)
+        context['form'] = form
+        if form.is_valid():
+            f = request.FILES['file']
+            valid, err = validate_pdf(f)
+            if not valid:
+                messages.error(request, err)
+                return render(request, 'pdf_tools/simple_form.html', context)
+            file_path = save_uploaded_file(f)
+            try:
+                output_path = pdf_to_text_service(file_path)
+                job = ProcessingJob.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    tool_name='pdf_to_text',
+                    original_filename=f.name,
+                    status='COMPLETED',
+                    completed_at=timezone.now(),
+                    output_file=output_path,
+                    output_filename=os.path.splitext(f.name)[0] + '.txt',
+                )
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+                return redirect(reverse('download_file', args=[job.id]))
+            except ValueError as e:
+                messages.error(request, str(e))
+            except Exception:
+                logger.exception('pdf_to_text failed')
+                messages.error(request, 'Could not extract text from this file.')
+            finally:
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+    return render(request, 'pdf_tools/simple_form.html', context)
+
+
+def zip_compress(request):
+    """Compress multiple uploaded files into a single .zip.
+
+    Shows original vs zipped size on the result screen. Temp files are cleaned
+    up right after the response is built.
+    """
+    context = {'form': ZipCompressForm(), 'levels': ZIP_LEVELS}
+    if request.method == 'POST':
+        form = ZipCompressForm(request.POST, request.FILES)
+        context['form'] = form
+        if form.is_valid():
+            files = request.FILES.getlist('files')
+            # Enforce total size and count limits ourselves for a clear message.
+            total = sum(f.size for f in files)
+            if total > ZIP_MAX_TOTAL_SIZE:
+                messages.error(
+                    request,
+                    'Your files total %d MB, over the %d MB limit. Please upload '
+                    'fewer or smaller files.' % (
+                        total // (1024 * 1024),
+                        ZIP_MAX_TOTAL_SIZE // (1024 * 1024)))
+                return render(request, 'pdf_tools/zip_compress.html', context)
+            if len(files) > ZIP_MAX_FILES:
+                messages.error(
+                    request,
+                    'Please upload at most %d files at a time.' % ZIP_MAX_FILES)
+                return render(request, 'pdf_tools/zip_compress.html', context)
+
+            saved = []
+            original_total = 0
+            try:
+                for f in files:
+                    path = save_uploaded_file(f)
+                    saved.append((path, f.name))
+                    original_total += os.path.getsize(path)
+                zip_path, zip_name = compress_files(
+                    saved, level=form.cleaned_data['level'],
+                    zip_name=form.cleaned_data['zip_name'])
+                zipped_size = os.path.getsize(zip_path)
+                job = ProcessingJob.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    tool_name='zip_compress',
+                    original_filename='%d files' % len(files),
+                    status='COMPLETED',
+                    completed_at=timezone.now(),
+                    output_file=zip_path,
+                    output_filename=zip_name,
+                )
+                context['result'] = {
+                    'download_url': reverse('download_file', args=[job.id]),
+                    'zip_name': zip_name,
+                    'original_size': original_total,
+                    'zipped_size': zipped_size,
+                    'file_count': len(files),
+                }
+            except Exception:
+                logger.exception('zip_compress failed')
+                messages.error(request, 'Could not create the archive.')
+            finally:
+                for path, _ in saved:
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+    return render(request, 'pdf_tools/zip_compress.html', context)
+
+
+def zip_extract(request):
+    """List a zip's contents, and stream a single file or the whole archive.
+
+    Because HTTP is stateless, once we list an archive we stash its path under a
+    random token so the "download one" / "download all" buttons can act on the
+    same archive without the user re-uploading it. The listing step enforces
+    zip-slip / bomb protections before anything is extracted. Single-file
+    downloads are streamed straight from the archive (never written to disk under
+    a user-controlled name).
+    """
+    context = {'form': ZipExtractForm()}
+
+    def _stash(path):
+        """Save ``path`` under a token and return the token."""
+        token = uuid.uuid4().hex
+        request.session['zip_' + token] = path
+        return token
+
+    def _unstash(token):
+        return request.session.get('zip_' + token) if token else None
+
+    if request.method == 'POST':
+        form = ZipExtractForm(request.POST, request.FILES)
+        context['form'] = form
+        token = request.POST.get('token')
+        zip_path = _unstash(token) if token else None
+
+        # If a token is present we already have the archive saved; otherwise
+        # validate the freshly uploaded file and stash it.
+        if zip_path is None and form.is_valid():
+            zip_path = save_uploaded_file(request.FILES['file'])
+            token = _stash(zip_path)
+
+        if zip_path and os.path.exists(zip_path):
+            try:
+                want = request.POST.get('download_one')
+                if want:
+                    with zipfile.ZipFile(zip_path, 'r') as zf:
+                        list_zip_contents(zip_path)  # slip/bomb guard first
+                        names = {i.filename for i in zf.infolist()}
+                        if want not in names:
+                            raise ZipSecurityError(
+                                'That file is not in the archive.')
+                        data = zf.read(want)
+                    name = sanitize_filename(want)
+                    response = HttpResponse(
+                        data, content_type='application/octet-stream')
+                    response['Content-Disposition'] = (
+                        'attachment; filename="%s"' % name)
+                    return response
+                if request.POST.get('download_all'):
+                    extract_dir, out_paths, _ = extract_zip(zip_path)
+                    all_zip, all_name = compress_files(
+                        [(os.path.join(extract_dir, rel), rel)
+                         for rel in out_paths],
+                        level='normal',
+                        zip_name=sanitize_filename(
+                            os.path.basename(zip_path)) + '-extracted')
+                    response = FileResponse(
+                        open(all_zip, 'rb'), as_attachment=True,
+                        filename=all_name)
+                    shutil.rmtree(extract_dir, ignore_errors=True)
+                    try:
+                        os.remove(all_zip)
+                    except OSError:
+                        pass
+                    return response
+                # Default: list the contents for the preview screen.
+                summary = list_zip_contents(zip_path)
+                context['listing'] = summary
+                context['zip_name'] = (request.FILES['file'].name
+                                       if request.FILES.get('file') else 'archive.zip')
+                context['token'] = token
+            except ZipSecurityError as e:
+                messages.error(request, str(e))
+            except zipfile.BadZipFile:
+                messages.error(request, 'That file is not a valid .zip archive.')
+            except Exception:
+                logger.exception('zip_extract failed')
+                messages.error(request, 'Could not read that archive.')
+        elif request.method == 'POST' and not form.is_valid():
+            # Surface file-field errors (e.g. not a .zip name).
+            pass
+    return render(request, 'pdf_tools/zip_extract.html', context)

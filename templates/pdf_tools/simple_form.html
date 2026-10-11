@@ -12,7 +12,7 @@
             <form method="post" enctype="multipart/form-data" id="toolForm">
                 {% csrf_token %}
                 <div class="upload-area" id="dropZone">
-                    <input type="file" name="{{ file_input_name|default:'file' }}" id="id_file" accept="{{ file_accept|default:'*'" }}" style="display:none" onchange="updateFileName(this)">
+                    <input type="file" name="{{ file_input_name|default:'file' }}" id="id_file" accept="{{ file_accept|default:'*' }}" style="display:none" onchange="updateFileName(this)">
                     <div class="upload-content" onclick="document.getElementById('id_file').click()">
                         <span class="upload-icon">{{ upload_icon|default:'📤' }}</span>
                         <h3>{{ drop_text|default:'Drop your file here' }}</h3>

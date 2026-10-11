@@ -1,9 +1,12 @@
 {% extends 'base.html' %}
+{% block title %}Compress PDF Online - Reduce PDF File Size | PDF Master{% endblock %}
+{% block meta_description %}Compress PDF files online for free. Choose Light, Balanced or Strong compression and see the exact size saved. No sign-up, files deleted automatically.{% endblock %}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <h1 class="page-title">Compress PDF</h1>
-        <p class="page-subtitle">Reduce PDF file size while preserving quality</p>
+        <h1 class="page-title">🗜️ Compress PDF</h1>
+        <p class="page-subtitle">Reduce PDF file size while preserving readability</p>
         
         <div class="tool-container">
             {% if not original_size %}
@@ -12,14 +15,20 @@
                 <div class="form-group">
                     <label for="id_file">Upload PDF</label>
                     <div class="upload-area" id="dropZone">
-                        <input type="file" name="file" id="id_file" accept=".pdf" style="display:none" onchange="updateFileName(this)">
+                        <input type="file" name="file" id="id_file" accept=".pdf,application/pdf" style="display:none" onchange="updateFileName(this)">
                         <div class="upload-content" onclick="document.getElementById('id_file').click()">
                             <span class="upload-icon">🗜️</span>
                             <h3>Drop your PDF here</h3>
                             <p>or click to choose a file</p>
                             <p id="fileName" class="file-name"></p>
+                            <p class="upload-hint">Files are deleted automatically after processing</p>
                         </div>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_quality">Compression level</label>
+                    {{ form.quality }}
+                    <p class="form-hint">{{ form.quality.help_text }}</p>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary btn-large">Compress PDF</button>
@@ -27,7 +36,10 @@
             </form>
             {% else %}
             <div class="result-box">
-                <h2>Compression Complete</h2>
+                <h2>✅ Compression Complete</h2>
+                <p class="result-subtitle">
+                    {% if ratio > 0 %}Your PDF is {{ ratio|floatformat:1 }}% smaller.{% else %}This PDF was already well optimized - no significant reduction was possible.{% endif %}
+                </p>
                 <div class="stats-grid">
                     <div class="stat">
                         <span class="stat-label">Original Size</span>
@@ -42,11 +54,30 @@
                         <span class="stat-value">{{ ratio|floatformat:1 }}%</span>
                     </div>
                 </div>
-                <a href="{% url 'download_file' job_id %}" class="btn btn-primary btn-large">Download Compressed PDF</a>
-                <a href="{% url 'compress_pdf' %}" class="btn btn-secondary">Compress Another</a>
+                <div class="result-actions">
+                    <a href="{% url 'download_file' job_id %}" class="btn btn-primary btn-large ocr-download">⬇️ Download Compressed PDF</a>
+                    <a href="{% url 'compress_pdf' %}" class="btn btn-secondary">Compress Another</a>
+                </div>
+                <p class="form-hint">Level used: {{ quality }}. The download is deleted automatically after you get it.</p>
             </div>
             {% endif %}
         </div>
+
+        <div class="seo-text">
+            <h2>How PDF compression works</h2>
+            <p>Our compressor first removes duplicate internal objects (always
+               lossless), then - on Balanced and Strong levels - recompresses
+               embedded images as JPEG at progressively lower quality. Text stays
+               razor sharp at every level.</p>
+        </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.result-subtitle { margin: .5rem 0 1rem; color: var(--muted, #64748b); }
+.result-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
+.seo-text { margin-top: 2rem; max-width: 46rem; }
+</style>
 {% endblock %}
