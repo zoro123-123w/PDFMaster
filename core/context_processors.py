@@ -11,4 +11,5 @@ def site_config(request):
         'AD_GATE_ENABLED': getattr(settings, 'AD_GATE_ENABLED', False),
         'AD_GATE_URL': getattr(settings, 'AD_GATE_URL', ''),
         'AD_GATE_COOLDOWN_MIN': getattr(settings, 'AD_GATE_COOLDOWN_MIN', 10),
+        'CSP_NONCE': getattr(request, 'csp_nonce', ''),
     }

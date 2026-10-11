@@ -160,7 +160,7 @@
 </section>
 {% endblock %}
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
 (function () {
     // ---------- Language search box ----------
     // tesseract-ocr-all installs ~130 packs, which makes a plain <select> painful

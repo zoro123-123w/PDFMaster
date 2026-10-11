@@ -57,7 +57,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
 function toggleAnswer(num) {
     const el = document.getElementById('answer' + num);
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';

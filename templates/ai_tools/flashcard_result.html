@@ -55,7 +55,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
 let cards = [];
 let currentIndex = 0;
 

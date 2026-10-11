@@ -29,6 +29,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'core.middleware.RateLimitMiddleware',
+    'core.csp.ContentSecurityPolicyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -139,6 +140,11 @@ AD_SLOT_INLINE = os.getenv('AD_SLOT_INLINE', '')
 AD_GATE_ENABLED = os.getenv('AD_GATE_ENABLED', 'False').lower() in ('1', 'true', 'yes')
 AD_GATE_URL = os.getenv('AD_GATE_URL', '')
 AD_GATE_COOLDOWN_MIN = int(os.getenv('AD_GATE_COOLDOWN_MIN', '10'))
+
+# Content-Security-Policy (core/csp.py). Nonce-based for inline scripts;
+# ad origins are added only when ADSENSE_CLIENT_ID is set. Disable for
+# local debugging only - do not ship with CSP off.
+CSP_ENABLED = os.getenv('CSP_ENABLED', 'True').lower() not in ('0', 'false', 'no')
 
 # --- Security -----------------------------------------------------------
 # Per-IP rate limit for tool POSTs (see core/middleware.py).

@@ -60,7 +60,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
 function updateImageName(input) {
     const el = document.getElementById('imageName');
     if (el && input.files.length > 0) {

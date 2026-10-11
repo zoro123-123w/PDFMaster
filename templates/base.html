@@ -20,7 +20,7 @@
     <meta name="theme-color" content="#4f46e5">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block json_ld %}
-    <script type="application/ld+json">
+    <script type="application/ld+json" nonce="{{ CSP_NONCE }}">
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",

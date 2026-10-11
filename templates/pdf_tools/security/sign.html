@@ -51,7 +51,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
 let sigCanvas, sigCtx, isDrawing = false;
 
 function initSignatureCanvas() {
