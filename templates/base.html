@@ -6,19 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PDFMaster - All Your PDF Tools in One Place{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Merge, split, compress, convert and manage your PDFs quickly and easily with PDFMaster.{% endblock %}">
-    <link rel="canonical" href="https://pdfmaster-s29m.onrender.com{{ request.path }}" />
+    <link rel="canonical" href="{{ SITE_URL }}{{ request.path }}" />
+    <meta property="og:site_name" content="PDFMaster">
+    <meta property="og:locale" content="en_US">
     <meta property="og:title" content="{% block og_title %}PDFMaster - All Your PDF Tools in One Place{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Merge, split, compress, convert and manage your PDFs quickly and easily with PDFMaster.{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:url" content="https://pdfmaster-s29m.onrender.com{{ request.path }}">
+    <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
+    <meta property="og:image" content="{{ SITE_URL }}{% static 'images/og-image.png' %}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ SITE_URL }}{% static 'images/og-image.png' %}">
     <meta name="robots" content="{% block robots_meta %}index, follow{% endblock %}">
+    <meta name="theme-color" content="#4f46e5">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block json_ld %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "PDFMaster",
+        "url": "{{ SITE_URL }}/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "description": "Merge, split, compress, convert, OCR and manage PDF files online - free and secure.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
+    {% endblock %}
+    {% if ADSENSE_CLIENT_ID %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT_ID }}" crossorigin="anonymous"></script>
+    {% endif %}
 </head>
 <body>
     <nav class="navbar">
         <div class="container">
+    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+    <link rel="alternate icon" href="{% static 'images/favicon-192.png' %}" sizes="192x192">
+    <link rel="apple-touch-icon" href="{% static 'images/favicon-192.png' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
             <a href="{% url 'home' %}" class="logo">
-                <span class="logo-icon">📄</span>
+                <img src="{% static 'images/logo.svg' %}" alt="PDFMaster" width="32" height="32" class="logo-img">
                 <span class="logo-text">PDFMaster</span>
             </a>
             <ul class="nav-links">
@@ -55,13 +83,16 @@
             </div>
         {% endif %}
         {% block content %}{% endblock %}
+        {% block ad_banner %}
+        {% include 'components/ad_banner.html' with slot=AD_SLOT_LEADERBOARD format='horizontal' %}
+        {% endblock %}
     </main>
 
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <span class="logo-icon">📄</span>
+                    <img src="{% static 'images/logo.svg' %}" alt="PDFMaster" width="28" height="28" class="logo-img">
                     <span class="logo-text">PDFMaster</span>
                     <p>All Your PDF Tools in One Place</p>
                 </div>
@@ -107,15 +138,16 @@
                     <ul>
                         <li><a href="{% url 'pricing' %}">Pricing</a></li>
                         <li><a href="{% url 'faq' %}">FAQ</a></li>
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Contact</a></li>
+                        <li><a href="{% url 'about' %}">About</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
                     </ul>
                 </div>
                 <div class="footer-links">
                     <h4>Legal</h4>
                     <ul>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="{% url 'privacy_policy' %}">Privacy Policy</a></li>
+                        <li><a href="{% url 'terms_of_service' %}">Terms of Service</a></li>
+                        <li><a href="{% url 'cookie_policy' %}">Cookie Policy</a></li>
                     </ul>
                 </div>
             </div>
@@ -124,6 +156,16 @@
             </div>
         </div>
     </footer>
+
+    <div class="cookie-banner" id="cookieBanner" hidden>
+        <p>We use strictly necessary cookies to run this site. Analytics and
+           advertising cookies are set only if you accept. Read the
+           <a href="{% url 'cookie_policy' %}">Cookie Policy</a>.</p>
+        <div class="cookie-actions">
+            <button class="btn btn-outline btn-sm" id="cookieReject" type="button">Essential only</button>
+            <button class="btn btn-primary btn-sm" id="cookieAccept" type="button">Accept all</button>
+        </div>
+    </div>
 
     <script src="{% static 'js/main.js' %}"></script>
 </body>

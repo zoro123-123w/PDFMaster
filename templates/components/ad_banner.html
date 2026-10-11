@@ -1,0 +1,19 @@
+{% comment %}
+Ad slot include. Renders nothing unless ADSENSE_CLIENT_ID is configured.
+
+Usage:  {% include 'components/ad_banner.html' with slot='1234567890' format='horizontal' %}
+        {% include 'components/ad_banner.html' with slot='1234567890' format='rectangle' inline=True %}
+
+The client script is loaded once in base.html; this only emits the <ins> tag.
+{% endcomment %}
+{% if ADSENSE_CLIENT_ID and slot %}
+<div class="ad-slot{% if inline %} ad-slot--inline{% endif %}" aria-label="Advertisement">
+    <ins class="adsbygoogle"
+         style="display:block{% if format == 'rectangle' %};min-width:300px;min-height:250px{% else %};min-width:320px;min-height:50px{% endif %}"
+         data-ad-client="{{ ADSENSE_CLIENT_ID }}"
+         data-ad-slot="{{ slot }}"
+         data-ad-format="{% if format == 'rectangle' %}rectangle{% else %}horizontal{% endif %}"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+{% endif %}

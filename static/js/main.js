@@ -561,3 +561,24 @@ function goToSelectedTool() {
     }
     window.location.href = select.value;
 }
+// --- Cookie consent banner ---------------------------------------------
+(function () {
+    const KEY = 'pdfmaster_cookie_consent';
+    const banner = document.getElementById('cookieBanner');
+    if (!banner) return;
+    let stored = null;
+    try { stored = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+    if (stored === null) {
+        banner.hidden = false;
+    }
+    function choose(value) {
+        try { localStorage.setItem(KEY, value); } catch (e) { /* ignore */ }
+        banner.hidden = true;
+        // Reload so the consent-aware scripts (ads/analytics) can pick up the choice.
+        if (value === 'accepted') { window.location.reload(); }
+    }
+    const accept = document.getElementById('cookieAccept');
+    const reject = document.getElementById('cookieReject');
+    if (accept) accept.addEventListener('click', () => choose('accepted'));
+    if (reject) reject.addEventListener('click', () => choose('essential'));
+})();

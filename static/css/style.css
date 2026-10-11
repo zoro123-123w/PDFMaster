@@ -987,3 +987,86 @@ body,
     padding: 0.375rem 0.75rem;
     font-size: 0.875rem;
 }
+/* --- Branding ------------------------------------------------------- */
+.logo-img {
+    height: 32px;
+    width: auto;
+    vertical-align: middle;
+}
+
+.footer-brand .logo-img {
+    height: 28px;
+}
+
+/* --- Static / prose pages (about, privacy, terms...) ---------------- */
+.prose-page {
+    max-width: 46rem;
+}
+
+.prose-page h1 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.prose-page h2 {
+    margin: 1.75rem 0 0.5rem;
+    font-size: 1.25rem;
+}
+
+.prose-page p,
+.prose-page li {
+    color: var(--text-light);
+    line-height: 1.75;
+}
+
+.prose-page ul {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.prose-page li {
+    margin-bottom: 0.35rem;
+}
+
+/* --- Ad slots ------------------------------------------------------- */
+.ad-slot {
+    margin: 1.5rem auto;
+    text-align: center;
+    min-height: 90px;
+    max-width: 728px;
+}
+
+.ad-slot--inline {
+    margin: 2rem 0;
+}
+
+/* --- Cookie consent banner ------------------------------------------ */
+.cookie-banner {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1000;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-banner p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    flex: 1 1 320px;
+}
+
+.cookie-banner .cookie-actions {
+    display: flex;
+    gap: 0.5rem;
+}
