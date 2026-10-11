@@ -1,0 +1,54 @@
+# Local / self-hosted production-parity stack.
+#
+# Usage:
+#   docker compose up --build          # app on http://localhost:10000
+#   docker compose run --rm web python manage.py createsuperuser
+#
+# OCR works out of the box here - the image installs tesseract-ocr-all
+# (see Dockerfile comments for why this is mandatory, not optional).
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "10000:10000"
+    environment:
+      # Override in a local .env or `docker compose run -e ...`.
+      SECRET_KEY: ${SECRET_KEY:-compose-dev-key-not-for-production}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      SITE_URL: ${SITE_URL:-http://localhost:10000}
+      # SQLite lives on the mounted volume so data survives container rebuilds.
+      SQLITE_PATH: ${SQLITE_PATH:-/app/data/db.sqlite3}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-groq}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
+      AD_SLOT_LEADERBOARD: ${AD_SLOT_LEADERBOARD:-}
+      AD_SLOT_INLINE: ${AD_SLOT_INLINE:-}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    volumes:
+      # Persist the SQLite database and processed files across rebuilds.
+      - pdfmaster-data:/app/data
+      - pdfmaster-media:/app/media
+    restart: unless-stopped
+
+  # Optional: purge stale temp files once an hour. Same image, one-shot job.
+  cleanup:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["python", "manage.py", "cleanup_temp"]
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-compose-dev-key-not-for-production}
+      DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      SQLITE_PATH: ${SQLITE_PATH:-/app/data/db.sqlite3}
+    volumes:
+      - pdfmaster-data:/app/data
+      - pdfmaster-media:/app/media
+    profiles: ["maintenance"]
+
+volumes:
+  pdfmaster-data:
+  pdfmaster-media:
