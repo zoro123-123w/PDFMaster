@@ -6,6 +6,12 @@ a fixed-window counter and are intended as a first line of defence against
 abuse, not as a hard security boundary - in production put a CDN/WAF (e.g.
 Cloudflare) in front as well.
 
+Cache note: the counters live in ``django.core.cache``. For accurate limits
+under multiple gunicorn workers (or multiple instances) the cache MUST be
+shared - set ``REDIS_URL`` (see config/settings.py) to use Redis. With the
+LocMemCache fallback each worker keeps its own counters, so the effective
+per-IP limit is multiplied by the number of workers.
+
 Temp file cleanup: ``cleanup_temp_files()`` deletes stale files under
 MEDIA_ROOT/temp. It is called from the cleanup management command and can be
 invoked from a cron job or Render's scheduled jobs.

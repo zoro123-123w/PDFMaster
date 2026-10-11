@@ -34,6 +34,7 @@ The repo ships `render.yaml`, so the fastest path is:
 | `AD_SLOT_LEADERBOARD` / `AD_SLOT_INLINE` | optional | AdSense slot IDs. |
 | `AD_GATE_ENABLED` / `AD_GATE_URL` / `AD_GATE_COOLDOWN_MIN` | optional | Ad-gate interstitial. Opens in a **new tab** (`window.open` + `noopener`) on "Download" and "Start OCR" clicks only; the current page is never redirected and the action still completes. Per-tab cooldown via `sessionStorage` (default 10 min). No-op when disabled or URL empty. |
 | `CSP_ENABLED` | optional | Content-Security-Policy header (nonce-based inline scripts; ad origins only when `ADSENSE_CLIENT_ID` is set). Defaults to `True` - only disable for local debugging. |
+| `REDIS_URL` | recommended | Redis connection string (e.g. `redis://localhost:6379/0`). Makes the rate limiter's counters a **shared cache** across gunicorn workers/instances; without it the per-process LocMemCache multiplies every limit by the worker count. |
 | `RATE_LIMIT_*` | optional | Tune/disable the built-in rate limiter (see `core/middleware.py`). |
 
 ### Scheduled cleanup

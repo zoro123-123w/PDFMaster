@@ -158,6 +158,27 @@ RATE_LIMIT_ENABLED = (
 RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('RATE_LIMIT_WINDOW_SECONDS', '3600'))
 RATE_LIMIT_MAX_POSTS = int(os.getenv('RATE_LIMIT_MAX_POSTS', '60'))
 RATE_LIMIT_MAX_UPLOADS = int(os.getenv('RATE_LIMIT_MAX_UPLOADS', '20'))
+
+# Cache used by the rate limiter (and anything else on django.core.cache).
+# Set REDIS_URL to use a SHARED cache - strongly recommended in production:
+# without it the LocMemCache default is per-process, so with N gunicorn
+# workers each client effectively gets N x the configured limit. Django's
+# built-in RedisCache backend needs the `redis` package (see requirements).
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'pdfmaster-ratelimit',
+        }
+    }
 # Files in MEDIA_ROOT/temp older than this many hours are deleted by
 # `manage.py cleanup_temp` (run via cron / Render scheduled job).
 TEMP_FILE_MAX_AGE_HOURS = int(os.getenv('TEMP_FILE_MAX_AGE_HOURS', '6'))
