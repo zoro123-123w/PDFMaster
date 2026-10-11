@@ -26,6 +26,9 @@ services:
       ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
       AD_SLOT_LEADERBOARD: ${AD_SLOT_LEADERBOARD:-}
       AD_SLOT_INLINE: ${AD_SLOT_INLINE:-}
+      AD_GATE_ENABLED: ${AD_GATE_ENABLED:-False}
+      AD_GATE_URL: ${AD_GATE_URL:-}
+      AD_GATE_COOLDOWN_MIN: ${AD_GATE_COOLDOWN_MIN:-10}
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
     volumes:
       # Persist the SQLite database and processed files across rebuilds.

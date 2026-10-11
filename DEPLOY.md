@@ -32,6 +32,7 @@ The repo ships `render.yaml`, so the fastest path is:
 | `AI_API_KEY` | optional | Groq key enables AI tools; leave empty to disable. |
 | `ADSENSE_CLIENT_ID` | optional | e.g. `ca-pub-1234...`; empty = no ad slots rendered. |
 | `AD_SLOT_LEADERBOARD` / `AD_SLOT_INLINE` | optional | AdSense slot IDs. |
+| `AD_GATE_ENABLED` / `AD_GATE_URL` / `AD_GATE_COOLDOWN_MIN` | optional | Ad-gate interstitial. Opens in a **new tab** (`window.open` + `noopener`) on "Download" and "Start OCR" clicks only; the current page is never redirected and the action still completes. Per-tab cooldown via `sessionStorage` (default 10 min). No-op when disabled or URL empty. |
 | `RATE_LIMIT_*` | optional | Tune/disable the built-in rate limiter (see `core/middleware.py`). |
 
 ### Scheduled cleanup

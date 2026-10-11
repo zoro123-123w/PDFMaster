@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'core.middleware.RateLimitMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -48,6 +49,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.site_config',
             ],
         },
     },
@@ -58,7 +60,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # SQLITE_PATH lets Docker/compose put the DB on a mounted volume.
+        'NAME': os.getenv('SQLITE_PATH') or str(BASE_DIR / 'db.sqlite3'),
     }
 }
 
@@ -103,10 +106,55 @@ AI_DEFAULT_MODEL = os.getenv('AI_DEFAULT_MODEL', 'openai/gpt-oss-120b')
 AI_BASE_URL = os.getenv('AI_BASE_URL', 'https://api.groq.com/openai/v1')
 AI_TIMEOUT_SECONDS = float(os.getenv('AI_TIMEOUT_SECONDS', '30'))
 
-# OCR (Tesseract) - optional system dependency
+# OCR (Tesseract) - optional system dependency.
+# Leave TESSERACT_CMD empty to rely on the binary being on PATH (the normal case
+# in the Docker image). Set it only if Tesseract lives somewhere unusual.
 TESSERACT_CMD = os.getenv('TESSERACT_CMD', '')
 
+# OCR limits. The server may have only 512 MB, so these caps keep a single
+# request from exhausting it: 20 MB, 30 pages, 200 DPI, 60s per page.
+OCR_MAX_PAGES = int(os.getenv('OCR_MAX_PAGES', '30'))
+OCR_MAX_FILE_SIZE = int(os.getenv('OCR_MAX_FILE_SIZE', 20 * 1024 * 1024))
+OCR_DPI = int(os.getenv('OCR_DPI', '200'))
+OCR_PAGE_TIMEOUT = int(os.getenv('OCR_PAGE_TIMEOUT', '60'))
+
 MAX_UPLOAD_SIZE = int(os.getenv('MAX_UPLOAD_SIZE', 26214400))
+
+# Canonical site origin used for canonical/OG URLs, sitemap and JSON-LD.
+# Falls back to the production Render domain, then to a local origin.
+SITE_URL = os.getenv('SITE_URL', 'https://pdfmaster-s29m.onrender.com').rstrip('/')
+
+# Ads (optional). Leave ADSENSE_CLIENT_ID empty to render no ad slots at all.
+ADSENSE_CLIENT_ID = os.getenv('ADSENSE_CLIENT_ID', '')
+# AdSense slot IDs for the built-in banner positions.
+AD_SLOT_LEADERBOARD = os.getenv('AD_SLOT_LEADERBOARD', '')
+AD_SLOT_INLINE = os.getenv('AD_SLOT_INLINE', '')
+
+# Ad-gate (optional interstitial). When enabled AND a URL is set, the first
+# "Download" or "Start OCR" click inside a tab opens the ad in a new tab
+# (window.open with noopener) and the original action still runs on the same
+# page - the current page is never redirected. Clicks inside one tab are
+# suppressed for AD_GATE_COOLDOWN_MIN minutes (sessionStorage). Rendered and
+# loaded as a no-op when disabled or when the URL is empty.
+AD_GATE_ENABLED = os.getenv('AD_GATE_ENABLED', 'False').lower() in ('1', 'true', 'yes')
+AD_GATE_URL = os.getenv('AD_GATE_URL', '')
+AD_GATE_COOLDOWN_MIN = int(os.getenv('AD_GATE_COOLDOWN_MIN', '10'))
+
+# --- Security -----------------------------------------------------------
+# Per-IP rate limit for tool POSTs (see core/middleware.py).
+# Disabled automatically while running the test suite so tests don't trip it.
+import sys
+TESTING = 'test' in sys.argv
+RATE_LIMIT_ENABLED = (
+    not TESTING
+    and os.getenv('RATE_LIMIT_ENABLED', 'True').lower() not in ('0', 'false', 'no')
+)
+RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('RATE_LIMIT_WINDOW_SECONDS', '3600'))
+RATE_LIMIT_MAX_POSTS = int(os.getenv('RATE_LIMIT_MAX_POSTS', '60'))
+RATE_LIMIT_MAX_UPLOADS = int(os.getenv('RATE_LIMIT_MAX_UPLOADS', '20'))
+# Files in MEDIA_ROOT/temp older than this many hours are deleted by
+# `manage.py cleanup_temp` (run via cron / Render scheduled job).
+TEMP_FILE_MAX_AGE_HOURS = int(os.getenv('TEMP_FILE_MAX_AGE_HOURS', '6'))
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'

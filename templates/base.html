@@ -36,6 +36,9 @@
     {% if ADSENSE_CLIENT_ID %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT_ID }}" crossorigin="anonymous"></script>
     {% endif %}
+    {% if AD_GATE_ENABLED and AD_GATE_URL %}
+    <script src="{% static 'js/ad-gate.js' %}" defer data-ad-gate-url="{{ AD_GATE_URL }}" data-ad-gate-cooldown="{{ AD_GATE_COOLDOWN_MIN }}"></script>
+    {% endif %}
 </head>
 <body>
     <nav class="navbar">
