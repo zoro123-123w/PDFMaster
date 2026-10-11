@@ -12,8 +12,8 @@ so the application never crashes.
 """
 import json
 
-from .ai_provider import AIServiceError, call_ai, truncate_text, safe_truncate, MAX_PROMPT_CHARS
-from .pdf_ai import extract_text_from_pdf, chunk_text, MAX_CONTEXT_CHARS
+from .ai_provider import call_ai, safe_truncate, MAX_PROMPT_CHARS
+from .pdf_ai import extract_text_from_pdf
 
 # --------------------------------------------------------------------------- #
 # System prompts

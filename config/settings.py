@@ -1,4 +1,6 @@
 import os
+import sys
+
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -149,7 +151,6 @@ CSP_ENABLED = os.getenv('CSP_ENABLED', 'True').lower() not in ('0', 'false', 'no
 # --- Security -----------------------------------------------------------
 # Per-IP rate limit for tool POSTs (see core/middleware.py).
 # Disabled automatically while running the test suite so tests don't trip it.
-import sys
 TESTING = 'test' in sys.argv
 RATE_LIMIT_ENABLED = (
     not TESTING

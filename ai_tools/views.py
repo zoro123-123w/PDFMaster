@@ -18,7 +18,7 @@ from .services.study_ai import (
     generate_question_bank, identify_important_questions, generate_chapter_summary,
     extract_key_concepts, generate_exam_prep,
 )
-from .services.ai_provider import AIServiceError, MAX_PROMPT_CHARS
+from .services.ai_provider import AIServiceError
 from pdf_tools.views import validate_pdf, save_uploaded_file
 
 logger = logging.getLogger(__name__)

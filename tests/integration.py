@@ -1,16 +1,11 @@
 import io
-import json
 import os
-import re
-import zipfile
-import struct
 import logging
 
 from django.test import TestCase, Client
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
 from pypdf import PdfWriter
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas as pdfcanvas
@@ -95,7 +90,7 @@ def make_pptx_file():
     """Create a simple .pptx file."""
     buffer = io.BytesIO()
     prs = PowerPointPresentation()
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    prs.slides.add_slide(prs.slide_layouts[6])
     prs.save(buffer)
     buffer.seek(0)
     return SimpleUploadedFile('test.pptx', buffer.read(),
@@ -552,7 +547,6 @@ class ComprehensiveIntegrationTest(TestCase):
 
     def test_ai_quiz_no_file(self):
         """AI Quiz without file should return 400 for AJAX."""
-        from ai_tools.forms import QuizForm
         response = self.client.post(
             reverse('ai_study_quiz'),
             data={},
@@ -790,13 +784,12 @@ class ComprehensiveIntegrationTest(TestCase):
             import zipfile
             z = zipfile.ZipFile(io.BytesIO(content))
             self.assertIn('word/document.xml', z.namelist())
-            doc = Document(io.BytesIO(content))
+            Document(io.BytesIO(content))
         except Exception as e:
             self.fail(f"DOCX validation failed: {e}")
 
     def test_pdf_to_excel_output_validity(self):
         """Verify XLSX output is valid."""
-        from openpyxl import load_workbook
         pdf = self._make_pdf()
         response = self.client.post(reverse('pdf_to_excel'), {'file': pdf})
         self.assertEqual(response.status_code, 302)

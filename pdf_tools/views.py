@@ -3,24 +3,20 @@ import uuid
 import shutil
 import zipfile
 import logging
-from django import forms
 from django.forms import Form
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse, FileResponse, Http404
+from django.http import HttpResponse, FileResponse
 from django.urls import reverse
 from django.utils import timezone
 from .models import ProcessingJob
 from .forms import (
     PDFUploadForm, SinglePDFUploadForm, ImageUploadForm, PageRangeForm,
-    RotationForm, WordUploadForm, ExcelUploadForm,
-    PowerPointUploadForm, HTMLUploadForm, TextFileUploadForm,
-    PasswordForm, ProtectForm, RedactForm, CropForm, WatermarkForm,
+    RotationForm, PasswordForm, ProtectForm, RedactForm, CropForm, WatermarkForm,
     PageNumberForm, OrganizeForm, OcrForm, SignatureForm,
     AddTextForm, AddImageForm, AnnotateForm, HighlightForm,
-    PPTUploadForm, ImageUploadAnyForm,
+    ImageUploadAnyForm,
     ZipCompressForm, ZipExtractForm, CompressPdfForm,
 )
 from .services.merge import merge_pdf_service
@@ -54,7 +50,6 @@ from .services.security import (
     protect_pdf as _protect_pdf, unlock_pdf as _unlock_pdf, redact_pdf as _redact_pdf,
 )
 from .services.signature import sign_pdf, SignatureError, decode_signature_image
-from .services.utils import create_output_path
 from .services.zip_tools import (
     ZipSecurityError, LEVELS as ZIP_LEVELS,
     compress_files, list_zip_contents, extract_zip, sanitize_filename,
@@ -293,7 +288,7 @@ def merge_pdf(request):
                     except OSError:
                         pass
                 return redirect(reverse('download_file', args=[job.id]))
-            except Exception as e:
+            except Exception:
                 messages.error(request, "Something went wrong while merging PDFs")
                 for p in file_paths:
                     try:

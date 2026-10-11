@@ -1,0 +1,12 @@
+# Ruff policy: ruff's documented default rule set (pycodestyle error subset
+# + pyflakes). Keeps the bar at real defects (unused imports/variables,
+# syntax errors) without forcing a repo-wide style restyle.
+line-length = 120
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Standalone bootstrap scripts must call django.setup() before importing
+# Django-dependent modules, which necessarily puts imports after code.
+"scripts/*.py" = ["E402"]

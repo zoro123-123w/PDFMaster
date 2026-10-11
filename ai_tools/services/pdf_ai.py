@@ -11,7 +11,7 @@ from django.conf import settings
 from pypdf import PdfReader
 import pymupdf
 
-from .ai_provider import AIServiceError, call_ai, truncate_text, safe_truncate, MAX_PROMPT_CHARS, DEFAULT_MODEL
+from .ai_provider import AIServiceError, call_ai, truncate_text, DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 

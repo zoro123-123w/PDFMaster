@@ -75,7 +75,6 @@ def sign_pdf(file_path, signature_bytes, page_no=1, x_pct=50, y_pct=50,
             tmp.close()
             page_width = page.rect.width
             sig_width = page_width * (width_pct / 100.0)
-            aspect = page.rect.height / page_width
             sig_height = sig_width * 0.35  # signatures are wide, not high
             x = page_width * (x_pct / 100.0)
             y = page.rect.height * (y_pct / 100.0)

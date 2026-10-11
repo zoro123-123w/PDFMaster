@@ -47,7 +47,7 @@ def pdf_to_word(file_path, data=None):
         for page in pdf:
             text = page.get_text()
             if text and text.strip():
-                lines = [l.strip() for l in text.splitlines() if l.strip()]
+                lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
                 for line in lines:
                     doc.add_paragraph(line)
             images = _extract_pdf_images(page, tmp_img_dir)
@@ -85,7 +85,6 @@ def word_to_pdf(file_path, data=None):
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 
     output_path = create_output_path('.pdf', 'word2pdf_')
@@ -198,7 +197,6 @@ def pdf_to_ppt(file_path, data=None):
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
-    slide_w_in = 13.333
     slide_h_in = 7.5
 
     pdf = fitz.open(file_path)
@@ -317,7 +315,6 @@ def excel_to_pdf(file_path, data=None):
     wb = load_workbook(file_path, data_only=True, read_only=True)
 
     styles = getSampleStyleSheet()
-    body = ParagraphStyle('ExcelBody', parent=styles['BodyText'], fontSize=8, spaceAfter=4)
     heading = ParagraphStyle('ExcelHeading', parent=styles['Heading2'],
                              spaceBefore=12, spaceAfter=6)
 
@@ -366,7 +363,7 @@ def pptx_to_pdf(file_path, data=None):
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak
 
     output_path = create_output_path('.pdf', 'pptx2pdf_')
     prs = Presentation(file_path)

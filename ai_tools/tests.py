@@ -2,15 +2,11 @@
 
 All external API calls are mocked — no real API key is required.
 """
-import io
-import logging
 from unittest import mock
 
 from django.test import TestCase, override_settings
-from django.conf import settings
 
 from ai_tools.services.ai_provider import (
-    AIProvider,
     AIServiceError,
     OpenAIProvider,
     call_ai,
@@ -19,8 +15,6 @@ from ai_tools.services.ai_provider import (
     safe_truncate,
     MAX_PROMPT_CHARS,
     DEFAULT_MODEL,
-    DEFAULT_PROVIDER,
-    DEFAULT_BASE_URL,
 )
 
 
@@ -300,7 +294,8 @@ class ProviderErrorHandlingTests(TestCase):
     )
     def test_timeout_error(self):
         """Verify timeout error is handled."""
-        import openai, httpx
+        import openai
+        import httpx
         req = httpx.Request('POST', 'https://api.test.com/v1/chat/completions')
         timeout_exc = openai.APITimeoutError(request=req)
 

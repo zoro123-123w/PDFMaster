@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
-from pdf_tools.views import PDF_TOOLS, PDF_TOOL_CATEGORIES
+from pdf_tools.views import PDF_TOOLS
 from ai_tools.views import AI_TOOLS, AI_STUDY_TOOLS
 from pdf_tools.models import ProcessingJob
 from ai_tools.models import AIRequest

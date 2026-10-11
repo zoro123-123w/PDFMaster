@@ -42,7 +42,7 @@ class CoreViewsTestCase(TestCase):
             stripped = line.strip()
             if stripped.startswith('Disallow:'):
                 self.assertNotEqual(stripped, 'Disallow: /',
-                    f'Found global Disallow: / which blocks the entire site')
+                    'Found global Disallow: / which blocks the entire site')
 
     @override_settings(ALLOWED_HOSTS=['*'], SITE_URL='https://example.com')
     def test_robots_txt_contains_sitemap(self):
@@ -53,7 +53,8 @@ class CoreViewsTestCase(TestCase):
 
     def test_robots_txt_sitemap_ignores_spoofed_host(self):
         """The Sitemap line must be built from SITE_URL, not the Host header."""
-        response = self.client.get('/robots.txt', HTTP_HOST='evil.example')
+        with self.settings(ALLOWED_HOSTS=['*']):
+            response = self.client.get('/robots.txt', HTTP_HOST='evil.example')
         content = response.content.decode()
         self.assertIn(
             f'Sitemap: {settings.SITE_URL}/sitemap.xml', content)

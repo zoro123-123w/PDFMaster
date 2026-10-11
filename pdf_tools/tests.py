@@ -4,7 +4,6 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from pypdf import PdfWriter
 import io
-import os
 
 User = get_user_model()
 
@@ -308,13 +307,6 @@ class PDFToolsWorkflowTestCase(TestCase):
         response = self.client.post(reverse('watermark_pdf'), {
             'file': pdf, 'text': 'CONFIDENTIAL', 'position': 'center',
             'opacity': '0.3', 'fontsize': '30', 'pages': ''
-        })
-        self.assertIn(response.status_code, [200, 302])
-
-    def test_protect_pdf_post(self):
-        pdf = self._make_pdf()
-        response = self.client.post(reverse('protect_pdf'), {
-            'file': pdf, 'password': 'secret123', 'confirm_password': 'secret123'
         })
         self.assertIn(response.status_code, [200, 302])
 
