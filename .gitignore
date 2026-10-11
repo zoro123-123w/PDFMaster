@@ -50,3 +50,9 @@ test_*.pdf
 *.jpg
 *.jpeg
 *.png
+
+# Branding assets must be tracked even though media pngs/jpgs are ignored
+!static/images/*.png
+
+# Generated verification reports
+ocr_verify_report.txt

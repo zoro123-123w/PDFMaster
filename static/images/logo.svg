@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="PDF Master">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <!-- Page -->
+  <path d="M12 6h26l14 14v38a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="url(#g)"/>
+  <!-- Fold -->
+  <path d="M38 6l14 14H40a2 2 0 0 1-2-2V6z" fill="#c7d2fe"/>
+  <!-- PDF wordmark -->
+  <text x="32" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">PDF</text>
+</svg>

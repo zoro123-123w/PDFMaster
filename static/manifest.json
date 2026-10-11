@@ -1,0 +1,17 @@
+{
+    "name": "PDFMaster - All Your PDF Tools in One Place",
+    "short_name": "PDFMaster",
+    "description": "Merge, split, compress, convert, OCR and manage your PDFs quickly and easily with PDFMaster.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#4f46e5",
+    "icons": [
+        {
+            "src": "/static/images/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}
