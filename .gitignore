@@ -57,3 +57,5 @@ test_*.pdf
 # Generated verification reports
 ocr_verify_report.txt
 media/
+
+.ruff_cache/
