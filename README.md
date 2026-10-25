@@ -1,3 +1,9 @@
+---
+title: PDFMaster
+sdk: docker
+app_port: 7860
+---
+
 # PDFMaster
 
 All Your PDF Tools in One Place

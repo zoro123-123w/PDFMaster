@@ -8,10 +8,6 @@ venv/
 .venv/
 env/
 ENV/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.pytest_cache/
 
 # Django
 *.log
@@ -26,6 +22,7 @@ staticfiles/
 .env
 .env.prod
 .env.local
+.env.*
 
 # IDE
 .vscode/
@@ -42,7 +39,6 @@ desktop.ini
 # Coverage
 .coverage
 htmlcov/
-.coverage.*
 
 # Testing
 test_*.pdf
@@ -50,12 +46,9 @@ test_*.pdf
 *.jpg
 *.jpeg
 *.png
-
-# Branding assets must be tracked even though media pngs/jpgs are ignored
 !static/images/*.png
 
 # Generated verification reports
 ocr_verify_report.txt
-media/
 
-.ruff_cache/
+node_modules/
