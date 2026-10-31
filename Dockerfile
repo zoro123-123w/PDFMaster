@@ -57,22 +57,3 @@ EXPOSE 7860
 
 # Run migrations and start gunicorn bound to 0.0.0.0:7860
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:7860 --workers ${WEB_CONCURRENCY} --timeout 120"]
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-# Create non-root user with UID 1000 and set ownership
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Collect static files during build
-RUN SECRET_KEY=build-only-secret python manage.py collectstatic --noinput
-
-EXPOSE 7860
-
-# Run migrations and start gunicorn bound to 0.0.0.0:7860
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:7860 --workers ${WEB_CONCURRENCY} --timeout 120"]
